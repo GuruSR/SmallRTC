@@ -32,3 +32,5 @@ How to use in your Watchy.
 `SmallRTC RTC; // Declare RTC object`
 
 Use the functions as you need to, though I would recommend including SmallNTP and Olson2POSIX for a complete suite of functionality.
+
+**NOTE:**  using dayStr or any other day function, will need to have Wday + 1, the week starts at Sunday with the Wday being the days SINCE Sunday as per time.h requirements.
