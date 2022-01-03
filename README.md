@@ -26,7 +26,9 @@ Functions and their usage:
 How to use in your Watchy.
 
 `#include <SmallRTC.h>`
-...
+
+`...`
+
 `SmallRTC RTC; // Declare RTC object`
 
 Use the functions as you need to, though I would recommend including SmallNTP and Olson2POSIX for a complete suite of functionality.
