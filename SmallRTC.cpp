@@ -1,6 +1,6 @@
 #include "SmallRTC.h"
 
-/* Olson2POSIX by GuruSR (https://www.github.com/GuruSR/Olson2POSIX)
+/* Olson2POSIX by GuruSR (https://www.github.com/GuruSR/SmallRTC)
  * Originally forked from WatchyRTC with a variety of fixes and improvements.
  * 
  * Version 1.0, January 2, 2022
