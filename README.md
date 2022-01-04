@@ -44,7 +44,7 @@ tmElements_t from `read(tmElements &tm)` returns the following:
    tm.Day; /**< day of the month - [ 1 to 31 ] */
    tm.Wday; /**< days since Sunday - [ 0 to 6 ] */
    tm.Month; /**< months since January - [ 0 to 11 ] */
-   tm.Year; /**< years since 1900 */
+   tm.Year; /**< years since 1970 */
 ```
 
 tmElements_t in use with `set(tmElements tm)` also expects the above values.
