@@ -4,6 +4,7 @@
  * Originally forked from WatchyRTC with a variety of fixes and improvements.
  * 
  * Version 1.0, January 2, 2022
+ * Version 1.1, January 4, 2022 : Correct Months from 1 to 12 to 0 to 11.
  *
  * This library offers an alternative to the WatchyRTC library, but also provides a 100% time.h and timelib.h
  * compliant RTC library.
@@ -80,9 +81,10 @@ void SmallRTC::read(tmElements_t &tm){
     if (RTCType == DS3231){
         rtc_ds.read(tm);
         tm.Wday--;
+        tm.Month--;
     }else if (RTCType == PCF8563){
         tm.Year = y2kYearToTm(rtc_pcf.getYear());
-        tm.Month = rtc_pcf.getMonth();
+        tm.Month = rtc_pcf.getMonth() - 1;
         tm.Day = rtc_pcf.getDay();
         tm.Wday = rtc_pcf.getWeekday();
         tm.Hour = rtc_pcf.getHour();
@@ -94,6 +96,7 @@ void SmallRTC::read(tmElements_t &tm){
 void SmallRTC::set(tmElements_t tm){
     if(RTCType == DS3231){
         tm.Wday++;
+        tm.Month++;
         rtc_ds.write(tm);
     }else if (RTCType == PCF8563){
         time_t t = makeTime(tm); //make and break to calculate tm.Wday
