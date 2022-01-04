@@ -68,10 +68,11 @@ void SmallRTC::setDateTime(String datetime){
     breakTime(t, tm);
     if (RTCType == DS3231){
         tm.Wday++;
+        tm.Month++;
         rtc_ds.write(tm);
     }else if (RTCType == PCF8563){
         //day, weekday, month, century(1=1900, 0=2000), year(0-99)
-        rtc_pcf.setDate(tm.Day, tm.Wday, tm.Month, 0, tmYearToY2k(tm.Year)); //TimeLib & DS3231 has Wday range of 1-7, but PCF8563 stores day of week in 0-6 range
+        rtc_pcf.setDate(tm.Day, tm.Wday, tm.Month + 1, 0, tmYearToY2k(tm.Year)); //TimeLib & DS3231 has Wday range of 1-7, but PCF8563 stores day of week in 0-6 range
         //hr, min, sec
         rtc_pcf.setTime(tm.Hour, tm.Minute, tm.Second);
      }
