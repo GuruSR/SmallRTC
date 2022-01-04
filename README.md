@@ -34,3 +34,17 @@ How to use in your Watchy.
 Use the functions as you need to, though I would recommend including SmallNTP and Olson2POSIX for a complete suite of functionality.
 
 **NOTE:**  using dayStr or any other day function, will need to have Wday + 1, the week starts at Sunday with the Wday being the days SINCE Sunday as per time.h requirements.
+
+tmElements_t from `read(tmElements &tm)` returns the following:
+
+```
+   tm.Second; /**< seconds after the minute - [ 0 to 59 ] */
+   tm.Minute; /**< minutes after the hour - [ 0 to 59 ] */
+   tm.Hour; /**< hours since midnight - [ 0 to 23 ] */
+   tm.Day; /**< day of the month - [ 1 to 31 ] */
+   tm.Wday; /**< days since Sunday - [ 0 to 6 ] */
+   tm.Month; /**< months since January - [ 0 to 11 ] */
+   tm.Year; /**< years since 1900 */
+```
+
+tmElements_t in use with `set(tmElements tm)` also expects the above values.
