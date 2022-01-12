@@ -15,6 +15,8 @@ Functions and their usage:
 
 **nextMinuteWake(bool Enabled = true):**  This should be in your deepSleep() function just in front of esp_deep_sleep_start().  This functions offers a False that will not wake the watch up on the next minute, for those who wish to only enable buttons to wake.
 
+**atMinuteWake(int Minute, bool Enabled = true):**  This will make the RTC wake up when the Minute data element matches the Minute you give it, can use False here to also stop the wake up from not happening as with `nextMinuteWake`.
+
 **uint8_t temperature():** Imported from WatchyRTC for compatibility.
 
 **uint8_t getType():**  Returns the rtcType as it is no longer exposed.
@@ -44,7 +46,7 @@ tmElements_t from `read(tmElements &tm)` returns the following:
    tm.Day; /**< day of the month - [ 1 to 31 ] */
    tm.Wday; /**< days since Sunday - [ 0 to 6 ] */
    tm.Month; /**< months since January - [ 0 to 11 ] */
-   tm.Year; /**< years since 1970 */
+   tm.Year; /**< years since 1900 & 1970 */
 ```
 
 tmElements_t in use with `set(tmElements tm)` also expects the above values.
