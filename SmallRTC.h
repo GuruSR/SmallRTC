@@ -5,9 +5,9 @@
 #include <DS3232RTC.h>
 #include <Rtc_Pcf8563.h>
 
-#define Unknown 9
-#define DS3231 0
-#define PCF8563 1
+#define Unknown 0
+#define DS3231 1
+#define PCF8563 2
 #define RTC_DS_ADDR 0x68
 #define RTC_PCF_ADDR 0x51
 #define RTC_LOCALYEAR_OFFSET 1900
