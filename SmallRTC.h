@@ -24,9 +24,10 @@ class SmallRTC {
         void set(tmElements_t tm);
         void resetWake();
         void nextMinuteWake(bool Enabled = true);
+        void atMinuteWake(int Minute, bool Enabled = true);
+        uint8_t temperature();
         uint8_t getType();
         uint32_t getADCPin();
-        uint8_t temperature();
     private:
         String _getValue(String data, char separator, int index);
 };

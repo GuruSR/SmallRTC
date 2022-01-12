@@ -5,6 +5,7 @@
  * 
  * Version 1.0, January 2, 2022
  * Version 1.1, January 4, 2022 : Correct Months from 1 to 12 to 0 to 11.
+ * Version 1.2, January 7, 2022 : Added atMinuteWake to enable minute based wakeup.
  *
  * This library offers an alternative to the WatchyRTC library, but also provides a 100% time.h and timelib.h
  * compliant RTC library.
@@ -120,10 +121,22 @@ void SmallRTC::resetWake(){
 void SmallRTC::nextMinuteWake(bool Enabled){
     if (RTCType == DS3231){
         rtc_ds.clearAlarm(ALARM_2); //resets the alarm flag in the RTC
+        rtc_ds.setAlarm(ALM2_EVERY_MINUTE, 0, 0, 0, 0); //alarm wakes up Watchy every minute
         rtc_ds.alarmInterrupt(ALARM_2, Enabled);  // Turn interrupt on or off based on Enabled.
     }else if (RTCType == PCF8563){
         rtc_pcf.clearAlarm(); //resets the alarm flag in the RTC
-        if (Enabled) rtc_pcf.setAlarm(constrain((rtc_pcf.getMinute() + 1) , 0 , 59), 99, 99, 99);   //set alarm to trigger 1 minute from now
+        if (Enabled) rtc_pcf.setAlarm(constrain((rtc_pcf.getMinute() + 1), 0 , 59), 99, 99, 99);   //set alarm to trigger 1 minute from now
+        else rtc_pcf.resetAlarm();
+    }
+}
+
+void SmallRTC::atMinuteWake(int Minute, bool Enabled){
+    if (RTCType == DS3231){
+        rtc_ds.clearAlarm(ALARM_2); //resets the alarm flag in the RTC
+		rtc_ds.setAlarm(ALM2_MATCH_MINUTES,constrain(Minute, 0 , 59) , 0, 0, 0);
+    }else if (RTCType == PCF8563){
+        rtc_pcf.clearAlarm(); //resets the alarm flag in the RTC
+        if (Enabled) rtc_pcf.setAlarm(constrain(Minute, 0 , 59), 99, 99, 99);   //set alarm to trigger 1 minute from now
         else rtc_pcf.resetAlarm();
     }
 }
