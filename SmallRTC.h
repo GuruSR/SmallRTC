@@ -31,5 +31,4 @@ class SmallRTC {
     private:
         String _getValue(String data, char separator, int index);
 };
-
 #endif
