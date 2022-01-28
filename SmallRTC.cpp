@@ -4,8 +4,9 @@
  * Originally forked from WatchyRTC with a variety of fixes and improvements.
  * 
  * Version 1.0, January 2, 2022
- * Version 1.1, January 4, 2022 : Correct Months from 1 to 12 to 0 to 11.
- * Version 1.2, January 7, 2022 : Added atMinuteWake to enable minute based wakeup.
+ * Version 1.1, January 4, 2022  : Correct Months from 1 to 12 to 0 to 11.
+ * Version 1.2, January 7, 2022  : Added atMinuteWake to enable minute based wakeup.
+ * Version 1.3, January 28, 2022 : Corrected atMinuteWake missing AlarmInterrupt & moved ClearAlarm around.
  *
  * This library offers an alternative to the WatchyRTC library, but also provides a 100% time.h and timelib.h
  * compliant RTC library.
@@ -73,7 +74,7 @@ void SmallRTC::setDateTime(String datetime){
         rtc_ds.write(tm);
     }else if (RTCType == PCF8563){
         //day, weekday, month, century(1=1900, 0=2000), year(0-99)
-        rtc_pcf.setDate(tm.Day, tm.Wday, tm.Month + 1, 0, tmYearToY2k(tm.Year)); //TimeLib & DS3231 has Wday range of 1-7, but PCF8563 stores day of week in 0-6 range
+        rtc_pcf.setDate(tm.Day, tm.Wday, tm.Month + 1, 0, tmYearToY2k(tm.Year)); //DS3231 has Wday range of 1-7, but TimeLib & PCF8563 require day of week in 0-6 range.
         //hr, min, sec
         rtc_pcf.setTime(tm.Hour, tm.Minute, tm.Second);
      }
@@ -104,7 +105,7 @@ void SmallRTC::set(tmElements_t tm){
         time_t t = makeTime(tm); //make and break to calculate tm.Wday
         breakTime(t, tm);
         //day, weekday, month, century(1=1900, 0=2000), year(0-99)
-        rtc_pcf.setDate(tm.Day, tm.Wday, tm.Month + 1, 0, tmYearToY2k(tm.Year)); //TimeLib & DS3231 has Wday range of 1-7, but PCF8563 stores day of week in 0-6 range
+        rtc_pcf.setDate(tm.Day, tm.Wday, tm.Month + 1, 0, tmYearToY2k(tm.Year)); //DS3231 has Wday range of 1-7, but TimeLib & PCF8563 require day of week in 0-6 range.
         //hr, min, sec
         rtc_pcf.setTime(tm.Hour, tm.Minute, tm.Second);
     }
@@ -120,8 +121,8 @@ void SmallRTC::resetWake(){
 
 void SmallRTC::nextMinuteWake(bool Enabled){
     if (RTCType == DS3231){
-        rtc_ds.clearAlarm(ALARM_2); //resets the alarm flag in the RTC
         rtc_ds.setAlarm(ALM2_EVERY_MINUTE, 0, 0, 0, 0); //alarm wakes up Watchy every minute
+        rtc_ds.clearAlarm(ALARM_2); //resets the alarm flag in the RTC
         rtc_ds.alarmInterrupt(ALARM_2, Enabled);  // Turn interrupt on or off based on Enabled.
     }else if (RTCType == PCF8563){
         rtc_pcf.clearAlarm(); //resets the alarm flag in the RTC
@@ -132,11 +133,12 @@ void SmallRTC::nextMinuteWake(bool Enabled){
 
 void SmallRTC::atMinuteWake(int Minute, bool Enabled){
     if (RTCType == DS3231){
-        rtc_ds.clearAlarm(ALARM_2); //resets the alarm flag in the RTC
 		rtc_ds.setAlarm(ALM2_MATCH_MINUTES,constrain(Minute, 0 , 59) , 0, 0, 0);
+        rtc_ds.clearAlarm(ALARM_2); //resets the alarm flag in the RTC
+        rtc_ds.alarmInterrupt(ALARM_2, Enabled);  // Turn interrupt on or off based on Enabled.
     }else if (RTCType == PCF8563){
         rtc_pcf.clearAlarm(); //resets the alarm flag in the RTC
-        if (Enabled) rtc_pcf.setAlarm(constrain(Minute, 0 , 59), 99, 99, 99);   //set alarm to trigger 1 minute from now
+        if (Enabled) rtc_pcf.setAlarm(constrain(Minute, 0 , 59), 99, 99, 99);
         else rtc_pcf.resetAlarm();
     }
 }
