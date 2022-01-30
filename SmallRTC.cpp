@@ -1,12 +1,13 @@
 #include "SmallRTC.h"
 
-/* Olson2POSIX by GuruSR (https://www.github.com/GuruSR/SmallRTC)
+/* SmallRTC by GuruSR (https://www.github.com/GuruSR/SmallRTC)
  * Originally forked from WatchyRTC with a variety of fixes and improvements.
  * 
- * Version 1.0, January 2, 2022
- * Version 1.1, January 4, 2022  : Correct Months from 1 to 12 to 0 to 11.
- * Version 1.2, January 7, 2022  : Added atMinuteWake to enable minute based wakeup.
+ * Version 1.0, January  2, 2022
+ * Version 1.1, January  4, 2022 : Correct Months from 1 to 12 to 0 to 11.
+ * Version 1.2, January  7, 2022 : Added atMinuteWake to enable minute based wakeup.
  * Version 1.3, January 28, 2022 : Corrected atMinuteWake missing AlarmInterrupt & moved ClearAlarm around.
+ * Version 1.4, January 29, 2022 : Added Make & Break Time functions to MATCH TimeLib & time.h by reducing Month and Wday.
  *
  * This library offers an alternative to the WatchyRTC library, but also provides a 100% time.h and timelib.h
  * compliant RTC library.
@@ -61,20 +62,19 @@ void SmallRTC::init(){
 void SmallRTC::setDateTime(String datetime){
     tmElements_t tm;
     tm.Year = CalendarYrToTm(_getValue(datetime, ':', 0).toInt()); //YYYY - 1970
-    tm.Month = _getValue(datetime, ':', 1).toInt() - 1;
+    tm.Month = _getValue(datetime, ':', 1).toInt();
     tm.Day = _getValue(datetime, ':', 2).toInt();
     tm.Hour = _getValue(datetime, ':', 3).toInt();
     tm.Minute = _getValue(datetime, ':', 4).toInt();
     tm.Second = _getValue(datetime, ':', 5).toInt();
-    time_t t = makeTime(tm);  //make and break to calculate tm.Wday
-    breakTime(t, tm);
+    time_t t = SmallRTC::MakeTime(tm);  //make and break to calculate tm.Wday
+    SmallRTC::BreakTime(t, tm);
     if (RTCType == DS3231){
         tm.Wday++;
-        tm.Month++;
         rtc_ds.write(tm);
     }else if (RTCType == PCF8563){
         //day, weekday, month, century(1=1900, 0=2000), year(0-99)
-        rtc_pcf.setDate(tm.Day, tm.Wday, tm.Month + 1, 0, tmYearToY2k(tm.Year)); //DS3231 has Wday range of 1-7, but TimeLib & PCF8563 require day of week in 0-6 range.
+        rtc_pcf.setDate(tm.Day, tm.Wday, tm.Month, 0, tmYearToY2k(tm.Year)); //DS3231 has Wday range of 1-7, but TimeLib & PCF8563 require day of week in 0-6 range.
         //hr, min, sec
         rtc_pcf.setTime(tm.Hour, tm.Minute, tm.Second);
      }
@@ -83,8 +83,8 @@ void SmallRTC::setDateTime(String datetime){
 void SmallRTC::read(tmElements_t &tm){
     if (RTCType == DS3231){
         rtc_ds.read(tm);
-        tm.Wday--;
-        tm.Month--;
+		tm.Wday--;
+		tm.Month--;
     }else if (RTCType == PCF8563){
         tm.Year = y2kYearToTm(rtc_pcf.getYear());
         tm.Month = rtc_pcf.getMonth() - 1;
@@ -98,12 +98,12 @@ void SmallRTC::read(tmElements_t &tm){
 
 void SmallRTC::set(tmElements_t tm){
     if(RTCType == DS3231){
-        tm.Wday++;
-        tm.Month++;
+		tm.Wday++;
+		tm.Month++;
         rtc_ds.write(tm);
     }else if (RTCType == PCF8563){
-        time_t t = makeTime(tm); //make and break to calculate tm.Wday
-        breakTime(t, tm);
+        time_t t = SmallRTC::MakeTime(tm); //make and break to calculate tm.Wday
+        SmallRTC::BreakTime(t, tm);
         //day, weekday, month, century(1=1900, 0=2000), year(0-99)
         rtc_pcf.setDate(tm.Day, tm.Wday, tm.Month + 1, 0, tmYearToY2k(tm.Year)); //DS3231 has Wday range of 1-7, but TimeLib & PCF8563 require day of week in 0-6 range.
         //hr, min, sec
@@ -126,19 +126,19 @@ void SmallRTC::nextMinuteWake(bool Enabled){
         rtc_ds.alarmInterrupt(ALARM_2, Enabled);  // Turn interrupt on or off based on Enabled.
     }else if (RTCType == PCF8563){
         rtc_pcf.clearAlarm(); //resets the alarm flag in the RTC
-        if (Enabled) rtc_pcf.setAlarm(constrain((rtc_pcf.getMinute() + 1), 0 , 59), 99, 99, 99);   //set alarm to trigger 1 minute from now
+        if (Enabled) rtc_pcf.setAlarm(constrain((rtc_pcf.getMinute() + 1), 0, 59), 99, 99, 99);   //set alarm to trigger 1 minute from now
         else rtc_pcf.resetAlarm();
     }
 }
 
 void SmallRTC::atMinuteWake(int Minute, bool Enabled){
     if (RTCType == DS3231){
-		rtc_ds.setAlarm(ALM2_MATCH_MINUTES,constrain(Minute, 0 , 59) , 0, 0, 0);
+		rtc_ds.setAlarm(ALM2_MATCH_MINUTES,constrain(Minute, 0, 59) , 0, 0, 0);
         rtc_ds.clearAlarm(ALARM_2); //resets the alarm flag in the RTC
         rtc_ds.alarmInterrupt(ALARM_2, Enabled);  // Turn interrupt on or off based on Enabled.
     }else if (RTCType == PCF8563){
         rtc_pcf.clearAlarm(); //resets the alarm flag in the RTC
-        if (Enabled) rtc_pcf.setAlarm(constrain(Minute, 0 , 59), 99, 99, 99);
+        if (Enabled) rtc_pcf.setAlarm(constrain(Minute, 0, 59), 99, 99, 99);
         else rtc_pcf.resetAlarm();
     }
 }
@@ -150,6 +150,18 @@ uint8_t SmallRTC::temperature(){
 
 uint8_t SmallRTC::getType(){ return RTCType; }
 uint32_t SmallRTC::getADCPin(){ return ADC_PIN; }
+
+time_t SmallRTC::MakeTime(tmElements_t TM){
+	TM.Month++;
+	TM.Wday++;
+	return makeTime(TM);
+}
+
+void SmallRTC::BreakTime(time_t &T, tmElements_t &TM){
+	breakTime(T,TM);
+	TM.Month--;
+	TM.Wday--;
+}
 
 String SmallRTC::_getValue(String data, char separator, int index)
 {
