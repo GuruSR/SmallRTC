@@ -9,6 +9,7 @@
  * Version 1.2, January  7, 2022 : Added atMinuteWake to enable minute based wakeup.
  * Version 1.3, January 28, 2022 : Corrected atMinuteWake missing AlarmInterrupt & moved ClearAlarm around.
  * Version 1.4, January 29, 2022 : Added Make & Break Time functions to MATCH TimeLib & time.h by reducing Month and Wday.
+ * Version 1.5, January 30, 2022 : Fixed atMinuteWake to require extra values for DS3231 to work properly.
  *
  * This library offers an alternative to the WatchyRTC library, but also provides a 100% time.h and timelib.h
  * compliant RTC library.
@@ -61,7 +62,7 @@ class SmallRTC {
         void set(tmElements_t tm);
         void resetWake();
         void nextMinuteWake(bool Enabled = true);
-        void atMinuteWake(int Minute, bool Enabled = true);
+        void atMinuteWake(uint8_t Minute, uint8_t Hour, uint8_t DayOfWeek, bool Enabled = true);
         uint8_t temperature();
         uint8_t getType();
         uint32_t getADCPin();
