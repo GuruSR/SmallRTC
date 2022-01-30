@@ -25,6 +25,9 @@ Functions and their usage:
 
 `getBatteryVoltage() { return analogReadMilliVolts(RTC.getADCPin()) / 500.0f; }`
 
+**time_t MakeTime(tmElements_t TM)** A TimeLib.h & time.h compliant version of `makeTime()`.
+**BreakTime(time_t &T, tmElements_t &TM)**  TimeLib.h & time.h compliant version of `breakTime()`.
+
 How to use in your Watchy.
 
 `#include <SmallRTC.h>`
@@ -46,7 +49,7 @@ tmElements_t from `read(tmElements &tm)` returns the following:
    tm.Day; /**< day of the month - [ 1 to 31 ] */
    tm.Wday; /**< days since Sunday - [ 0 to 6 ] */
    tm.Month; /**< months since January - [ 0 to 11 ] */
-   tm.Year; /**< years since 1900 & 1970 */
+   tm.Year; /**< years since 1970 */
 ```
 
 tmElements_t in use with `set(tmElements tm)` also expects the above values.
