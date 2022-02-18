@@ -3,13 +3,13 @@ A WatchyRTC replacement that offers more functionality, correct time.h and timel
 
 Functions and their usage:
 
-**init():**  Use this in the **switch (wakeup_reason)** in **default:**  Make it the first entry, so you can use the last function for Battery Voltage.
+**init():**  Use this in the **switch (wakeup_reason)** in **default:**  Make it the first entry, so you can use the last function for Battery Voltage.  Now includes corrections for the DS3231 and includes detection of non-functioning RTC.
 
-**setDateTime(String datetime):**  Originally from WatchyRTC.config(datetime), this is cleaned up and corrected.
+**setDateTime(String datetime):**  Originally from WatchyRTC.config(datetime), this is cleaned up and corrected, includes detection of non-functioning RTC.
 
 **read(tmElements_t &tm):**  Use this to read the RTC's current time state in a tmElements_t variable.
 
-**set(tmElements_t tm):**  Use this to set the tmElements_t variable contents into the RTC, typically can be from any source, most typically, SmallNTP (GuruSR).
+**set(tmElements_t tm):**  Use this to set the tmElements_t variable contents into the RTC, typically can be from any source, most typically, SmallNTP (GuruSR).  This function also includes detection of non-functioning RTC.
 
 **resetWake():**  This resets the Interrupt that woke the ESP32 up, do this in the **switch (wakeup_reason)** in **case ESP_SLEEP_WAKEUP_EXT0**.
 
@@ -28,6 +28,10 @@ Functions and their usage:
 **time_t MakeTime(tmElements_t TM)** A TimeLib.h & time.h compliant version of `makeTime()`.
 
 **BreakTime(time_t &T, tmElements_t &TM)**  TimeLib.h & time.h compliant version of `breakTime()`.
+
+**bool isOperating()** Returns `true` if the RTC is working properly.
+
+**float getRTCBattery(bool Critical = false)** retrieves the low/critical battery voltages that will keep the RTC running properly.
 
 How to use in your Watchy.
 
