@@ -15,7 +15,7 @@ Functions and their usage:
 
 **nextMinuteWake(bool Enabled = true):**  This should be in your `deepSleep()` function just in front of `esp_deep_sleep_start()`.  This functions offers a False (optional) that will not wake the watch up on the next minute, for those who wish to only enable buttons to wake.
 
-**atMinuteWake(uint8_t Minute, uint8_t Hour, uint8_t DayOfWeek, bool Enabled = true):**  Use this instead of `nextMinuteWake`, as this will make the RTC wake up when the Minute data element matches the Minute you give it.  Just like `nextMinuteWake` it can use False (optional) here to also stop the wake up from not happening.  For compatability with the DS3231, the Hour and DayofWeek (1 to 7 range) are needed in order for the atMinuteWake to work with that RTC.
+**atMinuteWake(uint8_t Minute, uint8_t Hour, uint8_t DayOfWeek, bool Enabled = true):**  Use this instead of `nextMinuteWake`, as this will make the RTC wake up when the Minute data element matches the Minute you give it.  Just like `nextMinuteWake` it can use False (optional) here to also stop the wake up from happening.  For compatability with the DS3231, the Hour and DayofWeek (1 to 7 range) are needed in order for the atMinuteWake to work with that RTC.
 
 **uint8_t temperature():** Imported from WatchyRTC for compatibility.
 
