@@ -41,7 +41,7 @@
  * SOFTWARE.
 */
 
-#include <Timelib.h>
+#include <TimeLib.h>
 #include <DS3232RTC.h>
 #include <Rtc_Pcf8563.h>
 #include <Wire.h>
