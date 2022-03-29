@@ -69,7 +69,7 @@ void SmallRTC::init(){
         checkStatus();
     }else{
         Wire.beginTransmission(RTC_PCF_ADDR);
-        if(Wire.endTransmission() == 0) { RTCType = PCF8563; ADC_PIN = 35; Operational = true; rtc_pcf.clearStatus(); Wire.beginTransmission(0xa3>>1); Wire.write(0x09); Wire.write(0x80); Wire.write(0x80); Wire.write(0x80); Wire.write(0x80); Wire.write(0x0); Wire.write(0x0); Wire.endTransmission();	} // Clear SquareWave & Timer
+        if(Wire.endTransmission() == 0) { RTCType = PCF8563; ADC_PIN = 34; Operational = true; rtc_pcf.clearStatus(); Wire.beginTransmission(0xa3>>1); Wire.write(0x09); Wire.write(0x80); Wire.write(0x80); Wire.write(0x80); Wire.write(0x80); Wire.write(0x0); Wire.write(0x0); Wire.endTransmission();	} // Clear SquareWave & Timer
     }
 }
 
