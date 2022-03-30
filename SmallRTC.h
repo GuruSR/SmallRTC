@@ -12,6 +12,7 @@
  * Version 1.5, January  30, 2022 : Fixed atMinuteWake to require extra values for DS3231M to work properly.
  * Version 1.6, February 17, 2022 : Added isOperating for the DS3231M to detect if the Oscillator has stopped.
  * Version 1.7, March    15, 2022 : Added Status, Squarewave & Timer reset to init for PCF8563.
+ * Version 1.8, March    29, 2022 : Added support for 2 variations of PCF8563 battery location.
  *
  * This library offers an alternative to the WatchyRTC library, but also provides a 100% time.h and timelib.h
  * compliant RTC library.
