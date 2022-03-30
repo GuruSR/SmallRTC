@@ -25,6 +25,8 @@ Functions and their usage:
 
 `getBatteryVoltage() { return analogReadMilliVolts(RTC.getADCPin()) / 500.0f; }`
 
+**NOTE:**  For the PCF8563, there are 2 variants, use the RTC.getADCPin() to determine where the UP Button is.
+
 **time_t MakeTime(tmElements_t TM)** A TimeLib.h & time.h compliant version of `makeTime()`.
 
 **BreakTime(time_t &T, tmElements_t &TM)**  TimeLib.h & time.h compliant version of `breakTime()`.
