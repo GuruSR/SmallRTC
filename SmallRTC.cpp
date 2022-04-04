@@ -12,6 +12,7 @@
  * Version 1.6, February 17, 2022 : Added isOperating for the DS3231M to detect if the Oscillator has stopped.
  * Version 1.7, March    15, 2022 : Added Status, Squarewave & Timer reset to init for PCF8563.
  * Version 1.8, March    29, 2022 : Added support for 2 variations of PCF8563 battery location.
+ * Version 1.9, April     4, 2022 : Added support for DS3232RTC version 2.0 by customizing defines.
  *
  * This library offers an alternative to the WatchyRTC library, but also provides a 100% time.h and timelib.h
  * compliant RTC library.
@@ -62,10 +63,10 @@ void SmallRTC::init(){
             rtc_ds.writeRTC(0x0E, controlReg);
         }
         checkStatus();
-        rtc_ds.squareWave(SQWAVE_NONE); //disable square wave output
-        rtc_ds.alarm(ALARM_2);
-        rtc_ds.setAlarm(ALM2_EVERY_MINUTE, 0, 0, 0, 0); //alarm wakes up Watchy every minute
-        rtc_ds.alarmInterrupt(ALARM_2, true); //enable alarm interrupt
+        rtc_ds.squareWave(DS3232RTC::SQWAVE_NONE); //disable square wave output
+        rtc_ds.alarm(DS3232RTC::ALARM_2);
+        rtc_ds.setAlarm(DS3232RTC::ALM2_EVERY_MINUTE, 0, 0, 0, 0); //alarm wakes up Watchy every minute
+        rtc_ds.alarmInterrupt(DS3232RTC::ALARM_2, true); //enable alarm interrupt
         Operational = true;
         checkStatus();
     }else{
@@ -150,7 +151,7 @@ void SmallRTC::set(tmElements_t tm){
 
 void SmallRTC::resetWake(){
     if (RTCType == DS3231){
-        rtc_ds.clearAlarm(ALARM_2); //resets the alarm flag in the RTC
+        rtc_ds.clearAlarm(DS3232RTC::ALARM_2); //resets the alarm flag in the RTC
         checkStatus();
     }else if (RTCType == PCF8563){
         rtc_pcf.clearAlarm(); //resets the alarm flag in the RTC
@@ -159,9 +160,9 @@ void SmallRTC::resetWake(){
 
 void SmallRTC::nextMinuteWake(bool Enabled){
     if (RTCType == DS3231){
-        rtc_ds.setAlarm(ALM2_EVERY_MINUTE, 0, 0, 0, 0); //alarm wakes up Watchy every minute
-        rtc_ds.clearAlarm(ALARM_2); //resets the alarm flag in the RTC
-        rtc_ds.alarmInterrupt(ALARM_2, Enabled);  // Turn interrupt on or off based on Enabled.
+        rtc_ds.setAlarm(DS3232RTC::ALM2_EVERY_MINUTE, 0, 0, 0, 0); //alarm wakes up Watchy every minute
+        rtc_ds.clearAlarm(DS3232RTC::ALARM_2); //resets the alarm flag in the RTC
+        rtc_ds.alarmInterrupt(DS3232RTC::ALARM_2, Enabled);  // Turn interrupt on or off based on Enabled.
         checkStatus();
     }else if (RTCType == PCF8563){
         rtc_pcf.clearAlarm(); //resets the alarm flag in the RTC
@@ -172,9 +173,9 @@ void SmallRTC::nextMinuteWake(bool Enabled){
 
 void SmallRTC::atMinuteWake(uint8_t Minute, uint8_t Hour, uint8_t DayOfWeek, bool Enabled){
     if (RTCType == DS3231){
-        rtc_ds.setAlarm(ALM2_MATCH_MINUTES,constrain(Minute, 0, 59) , Hour, DayOfWeek);
-        rtc_ds.clearAlarm(ALARM_2); //resets the alarm flag in the RTC
-        rtc_ds.alarmInterrupt(ALARM_2, Enabled);  // Turn interrupt on or off based on Enabled.
+        rtc_ds.setAlarm(DS3232RTC::ALM2_MATCH_MINUTES,constrain(Minute, 0, 59) , Hour, DayOfWeek);
+        rtc_ds.clearAlarm(DS3232RTC::ALARM_2); //resets the alarm flag in the RTC
+        rtc_ds.alarmInterrupt(DS3232RTC::ALARM_2, Enabled);  // Turn interrupt on or off based on Enabled.
         checkStatus();
     }else if (RTCType == PCF8563){
         rtc_pcf.clearAlarm(); //resets the alarm flag in the RTC

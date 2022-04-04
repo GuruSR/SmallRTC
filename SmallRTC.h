@@ -13,6 +13,7 @@
  * Version 1.6, February 17, 2022 : Added isOperating for the DS3231M to detect if the Oscillator has stopped.
  * Version 1.7, March    15, 2022 : Added Status, Squarewave & Timer reset to init for PCF8563.
  * Version 1.8, March    29, 2022 : Added support for 2 variations of PCF8563 battery location.
+ * Version 1.9, April     4, 2022 : Added support for DS3232RTC version 2.0 by customizing defines.
  *
  * This library offers an alternative to the WatchyRTC library, but also provides a 100% time.h and timelib.h
  * compliant RTC library.
@@ -50,9 +51,9 @@
 #define Unknown 0
 #define DS3231 1
 #define PCF8563 2
-#define RTC_DS_ADDR 0x68
 #define RTC_PCF_ADDR 0x51
 #define RTC_LOCALYEAR_OFFSET 1900
+#define RTC_DS_ADDR 0x68
 
 class SmallRTC {
     public:
