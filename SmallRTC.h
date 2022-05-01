@@ -14,6 +14,7 @@
  * Version 1.7, March    15, 2022 : Added Status, Squarewave & Timer reset to init for PCF8563.
  * Version 1.8, March    29, 2022 : Added support for 2 variations of PCF8563 battery location.
  * Version 1.9, April     4, 2022 : Added support for DS3232RTC version 2.0 by customizing defines.
+ * Version 2.0, April    30, 2022 : Removed Constrain which was causing 59 minute stall.
  *
  * This library offers an alternative to the WatchyRTC library, but also provides a 100% time.h and timelib.h
  * compliant RTC library.

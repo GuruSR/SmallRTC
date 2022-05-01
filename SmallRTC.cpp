@@ -13,6 +13,7 @@
  * Version 1.7, March    15, 2022 : Added Status, Squarewave & Timer reset to init for PCF8563.
  * Version 1.8, March    29, 2022 : Added support for 2 variations of PCF8563 battery location.
  * Version 1.9, April     4, 2022 : Added support for DS3232RTC version 2.0 by customizing defines.
+ * Version 2.0, April    30, 2022 : Removed Constrain which was causing 59 minute stall.
  *
  * This library offers an alternative to the WatchyRTC library, but also provides a 100% time.h and timelib.h
  * compliant RTC library.
@@ -166,20 +167,20 @@ void SmallRTC::nextMinuteWake(bool Enabled){
         checkStatus();
     }else if (RTCType == PCF8563){
         rtc_pcf.clearAlarm(); //resets the alarm flag in the RTC
-        if (Enabled) rtc_pcf.setAlarm(constrain((rtc_pcf.getMinute() + 1), 0, 59), 99, 99, 99);   //set alarm to trigger 1 minute from now
+        if (Enabled) rtc_pcf.setAlarm(((rtc_pcf.getMinute() + 1) % 60), 99, 99, 99);   //set alarm to trigger 1 minute from now
         else rtc_pcf.resetAlarm();
     }
 }
 
 void SmallRTC::atMinuteWake(uint8_t Minute, uint8_t Hour, uint8_t DayOfWeek, bool Enabled){
     if (RTCType == DS3231){
-        rtc_ds.setAlarm(DS3232RTC::ALM2_MATCH_MINUTES,constrain(Minute, 0, 59) , Hour, DayOfWeek);
+        rtc_ds.setAlarm(DS3232RTC::ALM2_MATCH_MINUTES,(Minute % 60) , Hour, DayOfWeek);
         rtc_ds.clearAlarm(DS3232RTC::ALARM_2); //resets the alarm flag in the RTC
         rtc_ds.alarmInterrupt(DS3232RTC::ALARM_2, Enabled);  // Turn interrupt on or off based on Enabled.
         checkStatus();
     }else if (RTCType == PCF8563){
         rtc_pcf.clearAlarm(); //resets the alarm flag in the RTC
-        if (Enabled) rtc_pcf.setAlarm(constrain(Minute, 0, 59), 99, 99, 99);
+        if (Enabled) rtc_pcf.setAlarm((Minute % 60), 99, 99, 99);
         else rtc_pcf.resetAlarm();
     }
 }
