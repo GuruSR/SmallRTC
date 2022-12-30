@@ -206,7 +206,7 @@ void SmallRTC::BreakTime(time_t &T, tmElements_t &TM){
 }
 
 bool SmallRTC::isOperating() { return Operational; }
-void SmallRTC::checkStatus() { if (Operational) Operational = !rtc_ds.oscStopped(true); }
+void SmallRTC::checkStatus() { if (Operational && RTCType == DS3231) Operational = !rtc_ds.oscStopped(true); }
 float SmallRTC::getRTCBattery(bool Critical){
     if (RTCType == PCF8563) return (Critical ?  3.45 : 3.58);
     else if (RTCType == DS3231) return (Critical ? 3.69 : 3.75);
