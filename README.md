@@ -1,9 +1,11 @@
-# SmallRTC
+# SmallRTC 2.x
 A WatchyRTC replacement that offers more functionality, correct time.h and timelib.h operation and is NTP safe.
 
 Functions and their usage:
 
 **init():**  Use this in the **switch (wakeup_reason)** in **default:**  Make it the first entry, so you can use the last function for Battery Voltage.  Now includes corrections for the DS3231 and includes detection of non-functioning RTC.
+
+*2.2*:  **clearAlarm():**  Use this at any time you wake the Watchy except at reboot.
 
 **setDateTime(String datetime):**  Originally from WatchyRTC.config(datetime), this is cleaned up and corrected, includes detection of non-functioning RTC.
 
@@ -15,7 +17,9 @@ Functions and their usage:
 
 **nextMinuteWake(bool Enabled = true):**  This should be in your `deepSleep()` function just in front of `esp_deep_sleep_start()`.  This functions offers a False (optional) that will not wake the watch up on the next minute, for those who wish to only enable buttons to wake.
 
-**atMinuteWake(uint8_t Minute, uint8_t Hour, uint8_t DayOfWeek, bool Enabled = true):**  Use this instead of `nextMinuteWake`, as this will make the RTC wake up when the Minute data element matches the Minute you give it.  Just like `nextMinuteWake` it can use False (optional) here to also stop the wake up from happening.  For compatability with the DS3231, the Hour and DayofWeek (1 to 7 range) are needed in order for the atMinuteWake to work with that RTC.
+*2.0*:  **atMinuteWake(uint8_t Minute, uint8_t Hour, uint8_t DayOfWeek, bool Enabled = true):**\
+*2.2*:  **atMinuteWake(uint8_t Minute, bool Enabled = true):**
+Use this instead of `nextMinuteWake`, as this will make the RTC wake up when the Minute data element matches the Minute you give it.  Just like `nextMinuteWake` it can use False (optional) here to also stop the wake up from happening.  For compatability with the DS3231, the Hour and DayofWeek (1 to 7 range) are needed in order for the atMinuteWake to work with that RTC.
 
 **uint8_t temperature():** Imported from WatchyRTC for compatibility.
 
