@@ -18,7 +18,7 @@ This is when the RTC is in a different environment during your daily usage, this
 
 SmallRTC 2.3 (and above) has the ability to on-the-fly change the Drift value, allowing external code to give the user the ability to alter it until it gets as close to possible for time as they can.  The Drift Calculation is accurate (with a variance of error due to the 2 decimal float math), but it was accurate for the conditions the RTC was in at that time and will undoubtably be wrong in others.
 
-Your best solution is to find a balance to keep it from getting to fast or too slow that it isn't reliable enough to work with.  WatchyGSR has the option of doing an NTP on a specific time of day (so you could set it to go an hour before you'd usually get up), this would give the RTC the chance to be mostly accurate all day.  Also as of 1.4.7C, WatchyGSR has the option to alter the Drift value so you can raise (slow down) or lower (speed up) second changes.
+Your best solution is to find a balance to keep it from getting to fast or too slow that it isn't reliable enough to work with.  Watchy_GSR has the option of doing an NTP on a specific time of day (so you could set it to go an hour before you'd usually get up), this would give the RTC the chance to be mostly accurate all day.  Also as of 1.4.7C, Watchy_GSR has the option to alter the Drift value so you can raise (slow down) or lower (speed up) second changes.
 
 ### **Drift Value**
 
