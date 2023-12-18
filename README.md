@@ -1,11 +1,9 @@
-# SmallRTC 2.2
+# SmallRTC 2.3
 A WatchyRTC replacement that offers more functionality, correct time.h and timelib.h operation and is NTP safe.
 
 Functions and their usage:
 
 **init():**  Use this in the **switch (wakeup_reason)** in **default:**  Make it the first entry, so you can use the last function for Battery Voltage.  Now includes corrections for the DS3231 and includes detection of non-functioning RTC.
-
-**clearAlarm():**  Use this at any time you wake the Watchy except at reboot.
 
 **setDateTime(String datetime):**  Originally from WatchyRTC.config(datetime), this is cleaned up and corrected, includes detection of non-functioning RTC.
 
@@ -13,7 +11,7 @@ Functions and their usage:
 
 **set(tmElements_t tm):**  Use this to set the tmElements_t variable contents into the RTC, typically can be from any source, most typically, SmallNTP (GuruSR).  This function also includes detection of non-functioning RTC.
 
-**resetWake():**  This resets the Interrupt that woke the ESP32 up, do this in the **switch (wakeup_reason)** in **case ESP_SLEEP_WAKEUP_EXT0**.
+**clearAlarm():**  Use this at any time you wake the Watchy except at reboot, do this in the **switch (wakeup_reason)** in **case ESP_SLEEP_WAKEUP_EXT0**.
 
 **nextMinuteWake(bool Enabled = true):**  This should be in your `deepSleep()` function just in front of `esp_deep_sleep_start()`.  This functions offers a False (optional) that will not wake the watch up on the next minute, for those who wish to only enable buttons to wake.
 
@@ -26,9 +24,13 @@ Use this instead of `nextMinuteWake`, as this will make the RTC wake up when the
 
 **uint32_t getADCPin():**  Returns the ADC_PIN, so your BatteryVoltage function can look like:
 
-`getBatteryVoltage() { return analogReadMilliVolts(RTC.getADCPin()) / 500.0f; }`
+**uint16_t getLocalYearOffset():**  Returns the Year Offset, hard coded to 1900.
 
-**NOTE:**  For the PCF8563, there are 2 variants, use the RTC.getADCPin() to determine where the UP Button is.
+**float getWatchyHWVer():**  Returns the detected Watchy hardware version #.
+
+**void UseESP32(bool Enforce):**  Tell SmallRTC to only use the Internal RTC.
+
+**bool OnESP32():**  Returns `true` if the Internal RTC is being used (by way of enforcement or hardware version).
 
 **time_t MakeTime(tmElements_t TM)** A TimeLib.h & time.h compliant version of `makeTime()`.
 
@@ -38,7 +40,29 @@ Use this instead of `nextMinuteWake`, as this will make the RTC wake up when the
 
 **float getRTCBattery(bool Critical = false)** retrieves the low/critical battery voltages that will keep the RTC running properly.
 
-How to use in your Watchy.
+**void beginDrift(tmElements_t &TM, bool Internal):**  Start the Drift Detection with the current time (TM) from a reliable source (time.is) and which RTC.
+
+**void pauseDrift(bool Pause):**  Tells SmallRTC to stop drift alteration (useful when timers are running to avoid odd behavior).
+
+**void endDrift(tmElements_t &TM, bool Internal):**  Complete Drift Detection and create Drift Value.  TM is the current time from the same source as `beginDrift`.
+
+**uint32_t getDrift(bool Internal):**  Returns the Drift Value in 100ths of a second.  This value is never negative.
+
+**void setDrift(uint32_t Drift, bool isFast, bool Internal):**  Set the Drift Value, whether the RTC runs FAST and if setting the Internal RTC Drift Value or not.
+
+**bool isFastDrift(bool Internal):**  This returns whether the specified RTC's drift is Fast or not.
+
+**bool isNewMinute():**  This will return `true` when a minute has actually passed.
+
+**bool updatedDrift(bool Internal):**  Returns `true` if time drift has happened since last time set on the specified RTC.
+
+**bool checkingDrift(bool Internal):**  Returns `true` if the specified RTC is currently doing a Drift Detection.
+
+**NOTE:**  To use the getADCPin():   `getBatteryVoltage() { return analogReadMilliVolts(RTC.getADCPin()) / 500.0f; }`
+
+**NOTE:**  For the PCF8563, there are 2 variants, use the RTC.getADCPin() to determine where the UP Button is.
+
+How to use in your Watchy.  Also see [
 
 `#include <SmallRTC.h>`
 
