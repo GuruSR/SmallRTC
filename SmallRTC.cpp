@@ -16,6 +16,7 @@
  * Version 2.0, April    30, 2022 : Removed Constrain which was causing 59 minute stall.
  * Version 2.1, May      30, 2022 : Fix PCF.
  * Version 2.2, May       5, 2023 : Added functionality to keep this version alive.
+ * Version 2.3, December 17, 2023 : Added ESP32 internal RTC functionality instead of keeping in Active Mode, 32bit drift (in 100ths of a second).
  *
  * This library offers an alternative to the WatchyRTC library, but also provides a 100% time.h and timelib.h
  * compliant RTC library.
@@ -49,36 +50,58 @@ RTC_DATA_ATTR uint8_t RTCType;
 RTC_DATA_ATTR uint32_t ADC_PIN;
 RTC_DATA_ATTR bool Operational;
 RTC_DATA_ATTR float WatchyHWVer;
+RTC_DATA_ATTR bool ForceESP32;
+RTC_DATA_ATTR GSRDrift SRTCDrift;
 
 SmallRTC::SmallRTC() {}
+
+struct timeval tv;
 
 void SmallRTC::init(){
     uint8_t controlReg, mask;
     RTCType = Unknown;
     ADC_PIN = 0;
-	Wire.begin();
-    Wire.beginTransmission(RTC_DS_ADDR);
-    if(!Wire.endTransmission()) {
-        RTCType = DS3231; ADC_PIN = 33; WatchyHWVer = 1.0;
-        controlReg = rtc_ds.readRTC(0x0E);
-        mask = _BV(7);
-        if (controlReg & mask){
-            controlReg &= ~mask;
-            rtc_ds.writeRTC(0x0E, controlReg);
-        }
-        Operational = true;
-        checkStatus(Operational);
-        rtc_ds.squareWave(DS3232RTC::SQWAVE_NONE); //disable square wave output
-        rtc_ds.alarm(DS3232RTC::ALARM_2);
-        rtc_ds.setAlarm(DS3232RTC::ALM2_EVERY_MINUTE, 0, 0, 0, 0); //alarm wakes up Watchy every minute
-        rtc_ds.alarmInterrupt(DS3232RTC::ALARM_2, true); //enable alarm interrupt
-    }else{
-        Wire.beginTransmission(RTC_PCF_ADDR);
+    SRTCDrift.ESPRTC.Drift = 0;
+    SRTCDrift.EXTRTC.Drift = 0;
+    SRTCDrift.ESPRTC.Begin = 0;
+    SRTCDrift.EXTRTC.Begin = 0;
+    SRTCDrift.ESPRTC.Slush = 0;
+    SRTCDrift.EXTRTC.Slush = 0;
+    SRTCDrift.ESPRTC.Fast = false;
+    SRTCDrift.EXTRTC.Fast = false;
+	esp_chip_info_t chip_info[sizeof(esp_chip_info_t)];
+	esp_chip_info(chip_info);
+	if (chip_info->model == CHIP_ESP32C3) { RTCType = ESP32; Operational = true; ADC_PIN = 0; WatchyHWVer = 3.0; }
+    else{
+        Wire.begin();
+        Wire.beginTransmission(RTC_DS_ADDR);
         if(!Wire.endTransmission()) {
-            RTCType = PCF8563; Operational = true; rtc_pcf.clearStatus(); Wire.beginTransmission(0xa3>>1); Wire.write(0x09); Wire.write(0x80); Wire.write(0x80); Wire.write(0x80); Wire.write(0x80); Wire.write(0x0); Wire.write(0x0); Wire.endTransmission();
-            if ((analogReadMilliVolts(34) / 500.0f) > 1) { ADC_PIN = 34; WatchyHWVer = 2.0; }	// Find the battery to determine hardware version.
-            if ((analogReadMilliVolts(35) / 500.0f) > 1) { ADC_PIN = 35; WatchyHWVer = 1.5; }
-        } // Clear SquareWave & Timer
+            RTCType = DS3231; ADC_PIN = 33; WatchyHWVer = 1.0;
+            controlReg = rtc_ds.readRTC(0x0E);
+            mask = _BV(7);
+            if (controlReg & mask){
+                controlReg &= ~mask;
+                rtc_ds.writeRTC(0x0E, controlReg);
+            }
+            Operational = true;
+            checkStatus(Operational);
+            rtc_ds.squareWave(DS3232RTC::SQWAVE_NONE); //disable square wave output
+            rtc_ds.alarm(DS3232RTC::ALARM_2);
+            rtc_ds.setAlarm(DS3232RTC::ALM2_EVERY_MINUTE, 0, 0, 0, 0); //alarm wakes up Watchy every minute
+            rtc_ds.alarmInterrupt(DS3232RTC::ALARM_2, true); //enable alarm interrupt
+        }else{
+            Wire.beginTransmission(RTC_PCF_ADDR);
+            if(!Wire.endTransmission()) {
+                RTCType = PCF8563; Operational = true; rtc_pcf.clearStatus(); Wire.beginTransmission(0xa3>>1); Wire.write(0x09); Wire.write(0x80); Wire.write(0x80); Wire.write(0x80); Wire.write(0x80); Wire.write(0x0); Wire.write(0x0); Wire.endTransmission();
+                if ((analogReadMilliVolts(34) / 500.0f) > 1) { ADC_PIN = 34; WatchyHWVer = 2.0; }	// Find the battery to determine hardware version.
+                if ((analogReadMilliVolts(35) / 500.0f) > 1) { ADC_PIN = 35; WatchyHWVer = 1.5; }
+            }
+        }
+    }
+    if (WatchyHWVer == 0){ /* Try to find it by way of battery */
+        if ((analogReadMilliVolts(33) / 500.0f) > 1) { ADC_PIN = 33; WatchyHWVer = 1.0; }
+        if ((analogReadMilliVolts(34) / 500.0f) > 1) { ADC_PIN = 34; WatchyHWVer = 2.0; }
+        if ((analogReadMilliVolts(35) / 500.0f) > 1) { ADC_PIN = 35; WatchyHWVer = 1.5; }
     }
 }
 
@@ -93,9 +116,13 @@ void SmallRTC::setDateTime(String datetime){
     tm.Second = _getValue(datetime, ':', 5).toInt();
     time_t t = SmallRTC::MakeTime(tm);  //make and break to calculate tm.Wday
     SmallRTC::BreakTime(t, tm);
+    tv.tv_sec = t;
+    settimeofday(&tv,0);
+    SmallRTC::driftReset(t,true);
     if (RTCType == DS3231){
         tm.Wday++;
         rtc_ds.write(tm);
+        SmallRTC::driftReset(t,false);
         controlReg = rtc_ds.readRTC(0x0E);
         mask = _BV(7);
         if (controlReg & mask){
@@ -115,16 +142,34 @@ void SmallRTC::setDateTime(String datetime){
         tst.Day = rtc_pcf.getDay();
         tst.Hour = rtc_pcf.getHour();
         tst.Minute = rtc_pcf.getMinute();
+        SmallRTC::driftReset(t,false);
      }
+    SRTCDrift.NewMin = millis() + (60 - tm.Second) * 1000;
     if (Operational) Operational = (tm.Year == tst.Year && tm.Month == tst.Month && tm.Day == tst.Day && tm.Hour == tst.Hour && tm.Minute == tst.Minute);
 }
 
-void SmallRTC::read(tmElements_t &tm){
+void SmallRTC::read(tmElements_t &tm){ SmallRTC::read(tm,false); }
+
+void SmallRTC::read(tmElements_t &tm, bool Internal){
+    tmElements_t ti;    /* Internal Only */
+    gettimeofday(&tv,0);
+    SmallRTC::BreakTime(tv.tv_sec, ti);
 	checkStatus();
-    if (RTCType == DS3231){
+    if (RTCType == ESP32 || ForceESP32 || Internal){
+        SRTCDrift.NewMin = millis() + (60 - ti.Second) * 1000;
+        SRTCDrift.ESPRTC.Drifted = false;
+        SmallRTC::manageDrift(ti,true);
+        tm=ti;
+    }else if (RTCType == DS3231){
         rtc_ds.read(tm);
+        SRTCDrift.NewMin = millis() + (60 - tm.Second) * 1000;
         tm.Wday--;
         tm.Month--;
+        tv.tv_sec = SmallRTC::MakeTime(ti);
+        settimeofday(&tv,0);
+        SRTCDrift.EXTRTC.Drifted = false;
+        SmallRTC::manageDrift(ti,true);
+        SmallRTC::manageDrift(tm,false);
     }else if (RTCType == PCF8563){
         tm.Year = y2kYearToTm(rtc_pcf.getYear());
         tm.Month = rtc_pcf.getMonth() - 1;
@@ -133,16 +178,34 @@ void SmallRTC::read(tmElements_t &tm){
         tm.Hour = rtc_pcf.getHour();
         tm.Minute = rtc_pcf.getMinute();
         tm.Second = rtc_pcf.getSecond();
-    }    
+        SRTCDrift.NewMin = millis() + (60 - tm.Second) * 1000;
+        tv.tv_sec = SmallRTC::MakeTime(ti);
+        settimeofday(&tv,0);
+        SRTCDrift.EXTRTC.Drifted = false;
+        SmallRTC::manageDrift(ti,true);
+        SmallRTC::manageDrift(tm,false);
+    }
 }
 
-void SmallRTC::set(tmElements_t tm){
+void SmallRTC::set(tmElements_t tm){ SmallRTC::set(tm, false, false); }
+
+void SmallRTC::set(tmElements_t tm, bool Enforce, bool Internal){
     tmElements_t tst;
+    bool Int = (!Enforce || (Enforce && Internal));
     uint8_t controlReg, mask;
-    if(RTCType == DS3231){
+    time_t t = SmallRTC::MakeTime(tm);
+    SRTCDrift.NewMin = millis() + (60 - tm.Second) * 1000;
+    if (Int){
+        SmallRTC::driftReset(t,true);
+        tv.tv_sec = t;
+        settimeofday(&tv,0);
+    }
+    if (!(!Enforce || (Enforce && !Internal))) return;
+    if (RTCType == DS3231){
         tm.Wday++;
         tm.Month++;
         rtc_ds.write(tm);
+        SmallRTC::driftReset(t, false);
         controlReg = rtc_ds.readRTC(0x0E);
         mask = _BV(7);
         if (controlReg & mask){
@@ -152,11 +215,11 @@ void SmallRTC::set(tmElements_t tm){
         checkStatus();
         rtc_ds.read(tst);
     }else if (RTCType == PCF8563){
-        time_t t = SmallRTC::MakeTime(tm); //make and break to calculate tm.Wday
-        SmallRTC::BreakTime(t, tm);
+        SmallRTC::BreakTime(t, tm); //make and break to calculate tm.Wday
         //day, weekday, month, century(1=1900, 0=2000), year(0-99)
         rtc_pcf.setDate(tm.Day, tm.Wday, tm.Month + 1, 0, tmYearToY2k(tm.Year)); //DS3231 has Wday range of 1-7, but TimeLib & PCF8563 require day of week in 0-6 range.
         //hr, min, sec
+        SmallRTC::driftReset(t,false);
         rtc_pcf.setTime(tm.Hour, tm.Minute, tm.Second);
         rtc_pcf.clearStatus();
         tst.Year = y2kYearToTm(rtc_pcf.getYear());
@@ -168,22 +231,109 @@ void SmallRTC::set(tmElements_t tm){
     if (Operational) Operational = (tm.Year == tst.Year && tm.Month == tst.Month && tm.Day == tst.Day && tm.Hour == tst.Hour && tm.Minute == tst.Minute);
 }
 
+void SmallRTC::driftReset(time_t t, bool Internal){
+    GSRDrifting * G;
+    if (Internal) G = &SRTCDrift.ESPRTC; else G = &SRTCDrift.EXTRTC;
+    G->Last = t; G->Slush = 0;
+}
+
+void SmallRTC::manageDrift(tmElements_t &TM, bool Internal){
+    double L = 0.0, D = 0.0;
+    uint32_t V, S;
+    time_t T = SmallRTC::MakeTime(TM);
+    GSRDrifting * G;
+    S = 0;
+    if (Internal) G = &SRTCDrift.ESPRTC; else G = &SRTCDrift.EXTRTC;
+    if (G->Last == 0) G->Last = T;
+    if (G->Drift) { L = T - (G->Slush + G->Last); S = floor(L / G->Drift); }  // Take the seconds and divide by Drift, rounding down.
+    if (S > 0 && G->Begin == 0){                 // Drift offset needs to be dealt with.
+        if (SRTCDrift.Paused) return;            // Paused, don't process.
+        D = G->Slush + (S * G->Drift);           // Handle the seconds based on what happened.
+        V = floor(D);
+        T += ((G->Fast ? -1 : 1) * S);
+        SmallRTC::BreakTime(T,TM);
+        SmallRTC::set(TM,true,Internal);
+        G->Last = T - (L - V);                   // Set the current time with the addition of any leftover seconds.
+        G->Slush = (D - V);                      // Put the leftovers back into the slush to account for drift in decimal.
+        G->Drifted = true;
+    }else if (L <= 0.0) G->Last = T;  // Make sure that the last catches up incase things get turned on/off.
+}
+
+void SmallRTC::beginDrift(tmElements_t &TM, bool Internal){
+    GSRDrifting * G;
+    time_t T = SmallRTC::MakeTime(TM);
+    if (Internal) G = &SRTCDrift.ESPRTC; else G = &SRTCDrift.EXTRTC;
+    if (G->Begin == 0) { G->Begin = T; G->Drift = 0; G->Fast = false; SmallRTC::set(TM, true, Internal); }
+}
+
+void SmallRTC::pauseDrift(bool Pause){ SRTCDrift.Paused = Pause; }
+
+void SmallRTC::endDrift(tmElements_t &TM, bool Internal){
+    GSRDrifting * G;
+    time_t T = SmallRTC::MakeTime(TM);
+    time_t O;
+    tmElements_t OT;
+    int64_t D;
+    float F;
+    SmallRTC::read(OT,Internal);
+    O = SmallRTC::MakeTime(OT);
+    if (Internal) G = &SRTCDrift.ESPRTC; else G = &SRTCDrift.EXTRTC;
+    if (G->Begin != 0){
+        D = (T - O); F = O - G->Begin;
+        if (D != 0){ F = floor(((F / D) * 100.0)); D = F; G->Fast = (F < 0); G->Drift = (G->Fast ? 0 - D : D); G->Drift /= 100.0; } else G->Drift = 0;
+        SmallRTC::set(TM, true, Internal); G->Begin = 0;
+    }
+}
+
+uint32_t SmallRTC::getDrift(bool Internal){
+    float T;
+    uint32_t O;
+    if (Internal) T = SRTCDrift.ESPRTC.Drift; else T = SRTCDrift.EXTRTC.Drift;
+    T *= 100.0;
+    O = T;
+    return O;
+}
+
+void SmallRTC::setDrift(uint32_t Drift, bool isFast, bool Internal){
+    GSRDrifting * G;
+    if (Internal) G = &SRTCDrift.ESPRTC; else G = &SRTCDrift.EXTRTC;
+    float T = Drift;
+    G->Drift = (T / 100.0); G->Fast = isFast;
+}
+
+bool SmallRTC::isFastDrift(bool Internal){
+    if (Internal) return SRTCDrift.ESPRTC.Fast; else return SRTCDrift.EXTRTC.Fast;
+}
+
+bool SmallRTC::isNewMinute() { if (millis() >= SRTCDrift.NewMin) { SRTCDrift.NewMin += 60000; return true; } return false; }
+
+bool SmallRTC::updatedDrift(bool Internal){ if (Internal) return SRTCDrift.ESPRTC.Drifted; else return SRTCDrift.EXTRTC.Drifted; }
+
+bool SmallRTC::checkingDrift(bool Internal){ if (Internal) return (SRTCDrift.ESPRTC.Begin != 0); else return (SRTCDrift.EXTRTC.Begin != 0); }
+
 void SmallRTC::clearAlarm(){
     if (RTCType == DS3231) rtc_ds.clearAlarm(DS3232RTC::ALARM_2); //resets the alarm flag in the RTC
     else if (RTCType == PCF8563) rtc_pcf.clearAlarm();
 }
 
 void SmallRTC::nextMinuteWake(bool Enabled){
-        tmElements_t t;
-        SmallRTC::read(t);
-        atMinuteWake(t.Minute + 1,Enabled);
+    tmElements_t t;
+    SmallRTC::read(t);
+    atMinuteWake(t.Minute + 1,Enabled);
 }
 
 void SmallRTC::atMinuteWake(uint8_t Minute, bool Enabled){
-	if (RTCType == DS3231){
+    tmElements_t t;
+    int8_t X;
+    time_t T;
+    if (RTCType == ESP32 || ForceESP32){
+        SmallRTC::read(t,true);
+        X = (Minute % 60) - t.Minute; if (X < 0) X += 60;
+        T = ((X * 60) - t.Second) * 1000000;
+        esp_sleep_enable_timer_wakeup(T);
+	}else if (RTCType == DS3231){
         //  uint8_t Hour, uint8_t DayOfWeek
-        tmElements_t t;
-        SmallRTC::read(t);
+        SmallRTC::read(t,false);
         if (Minute < t.Minute || Minute > 59) t.Hour++;
         if (t.Hour > 23) t.Wday++;
         rtc_ds.clearAlarm(DS3232RTC::ALARM_2); //resets the alarm flag in the RTC
@@ -205,6 +355,8 @@ uint8_t SmallRTC::getType(){ return RTCType; }
 uint32_t SmallRTC::getADCPin(){ return ADC_PIN; }
 uint16_t SmallRTC::getLocalYearOffset(){ return 1900; };
 float SmallRTC::getWatchyHWVer(){ return WatchyHWVer; }
+void SmallRTC::UseESP32(bool Enforce) { if (RTCType != ESP32) ForceESP32 = Enforce; }
+bool SmallRTC::OnESP32() { if (RTCType != ESP32) return ForceESP32; return false; }
 
 time_t SmallRTC::MakeTime(tmElements_t TM){
     TM.Month++;
@@ -218,12 +370,12 @@ void SmallRTC::BreakTime(time_t &T, tmElements_t &TM){
     TM.Wday--;
 }
 
-bool SmallRTC::isOperating() { return Operational; }
+bool SmallRTC::isOperating() { return Operational || RTCType == ESP32 || ForceESP32; }
 void SmallRTC::checkStatus(bool ResetOP) { if (Operational && RTCType == DS3231) Operational = !rtc_ds.oscStopped(ResetOP); }
 float SmallRTC::getRTCBattery(bool Critical){
     if (RTCType == PCF8563) return (Critical ?  3.45 : 3.58);
     else if (RTCType == DS3231) return (Critical ? 3.65 : 3.69);	// 3.69 : 3.75 (TEST)
-    return 3.4;
+    return (Critical ? 3.45 : 3.49);
 }
 
 String SmallRTC::_getValue(String data, char separator, int index)
