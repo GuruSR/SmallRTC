@@ -1,5 +1,4 @@
 on: [push, pull_request]
-jobs:
     steps:
             - uses: actions/checkout@v4
             - name: arduino/arduino-lint-action
