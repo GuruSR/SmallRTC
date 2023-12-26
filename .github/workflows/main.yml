@@ -12,5 +12,5 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: arduino/arduino-lint-action
       - uses: arduino/arduino-lint-action@v1.0.2
+      - name: arduino/arduino-lint-action
