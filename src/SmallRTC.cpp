@@ -71,7 +71,7 @@ void SmallRTC::init(){
     SRTCDrift.EXTRTC.Fast = false;
 	esp_chip_info_t chip_info[sizeof(esp_chip_info_t)];
 	esp_chip_info(chip_info);
-	if (chip_info->model == CHIP_ESP32C3) { RTCType = ESP32; Operational = true; ADC_PIN = 0; WatchyHWVer = 3.0; }
+	if (chip_info->model == CHIP_ESP32C3) { RTCType = ESP32; Operational = true; ADC_PIN = 9; WatchyHWVer = 3.0; }
     else{
         Wire.begin();
         Wire.beginTransmission(RTC_DS_ADDR);
