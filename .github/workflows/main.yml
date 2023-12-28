@@ -1,6 +1,6 @@
 name: Arduino Lint
 
-on:
+on: [push, workflow_dispatch]
   push:
     branches: [ $default-branch ]
   pull_request:
