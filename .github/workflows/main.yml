@@ -8,6 +8,8 @@ on:
     - cron: "0 8 * * TUE"
   workflow_dispatch:
   repository_dispatch:
+    paths:
+      - "src/**"
 
 jobs:
   lint:
