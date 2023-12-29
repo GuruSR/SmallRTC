@@ -2,11 +2,12 @@ name: Arduino Lint
 
 on:
   push:
-    branches: [ $default-branch ]
   pull_request:
-    branches: [ $default-branch ]
+  schedule:
+    # Run every Tuesday at 8 AM UTC to catch breakage caused by new rules added to Arduino Lint.
+    - cron: "0 8 * * TUE"
   workflow_dispatch:
-    branches: [ $default-branch ]
+  repository_dispatch:
 
 jobs:
   lint:
