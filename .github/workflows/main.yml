@@ -24,6 +24,7 @@ jobs:
       - name: Arduino Lint
         uses: arduino/arduino-lint-action@v1
         with:
+          github_token: ${{ secrets.github_token }}
           compliance: specification
           library-manager: update
           # Always use this setting for official repositories. Remove for 3rd party projects.
