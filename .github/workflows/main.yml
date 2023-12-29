@@ -8,24 +8,20 @@ on:
     - cron: "0 8 * * TUE"
   workflow_dispatch:
   repository_dispatch:
-    paths:
-      - "src/**"
 
 jobs:
   lint:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: arduino/arduino-lint-action@v1.0.2
-
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Arduino Lint
         uses: arduino/arduino-lint-action@v1
         with:
-          github_token: ${{ secrets.github_token }}
+          verbose: true
+          token: ${{ secrets.github_token }}
           compliance: specification
-          library-manager: update
-          # Always use this setting for official repositories. Remove for 3rd party projects.
           project-type: library
+          library-manager: submit
