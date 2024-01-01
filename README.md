@@ -87,3 +87,18 @@ tmElements_t from `read(tmElements &tm)` returns the following:
 ```
 
 tmElements_t in use with `set(tmElements tm)` also expects the above values.
+
+**Compilation:**
+
+For those using PlatformIO, you may run into errors about settimeofday and gettimeof day, you're compiling with Linux includes, not Arduino.  To avoid the problem, you'll need to do the following:
+
+In SmallRTC.h, change:
+
+`#include <time.h>`
+  
+to 
+  
+`#include <C:\Users\[username]\.platformio\packages\toolchain-xtensa-esp32\xtensa-esp32-elf\include\sys\time.h>`  <- Windows  
+`#include <~/.platformio/packages/toolchain-xtensa-esp32/xtensa-esp32-elf/include/sys/time.h>`  <- Linux
+
+And compile.
