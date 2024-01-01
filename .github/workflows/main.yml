@@ -24,4 +24,4 @@ jobs:
           token: ${{ secrets.github_token }}
           compliance: specification
           project-type: library
-          library-manager: submit
+          library-manager: update
