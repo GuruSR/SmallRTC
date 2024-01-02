@@ -74,6 +74,7 @@ void SmallRTC::init(){
 	if (chip_info->model == CHIP_ESP32C3) { RTCType = ESP32; Operational = true; ADC_PIN = 9; WatchyHWVer = 3.0; }
     else{
         Wire.begin();
+#ifndef SMALL_RTC_NO_DS3232
         Wire.beginTransmission(RTC_DS_ADDR);
         if(!Wire.endTransmission()) {
             RTCType = DS3231; ADC_PIN = 33; WatchyHWVer = 1.0;
@@ -90,13 +91,16 @@ void SmallRTC::init(){
             rtc_ds.setAlarm(DS3232RTC::ALM2_EVERY_MINUTE, 0, 0, 0, 0); //alarm wakes up Watchy every minute
             rtc_ds.alarmInterrupt(DS3232RTC::ALARM_2, true); //enable alarm interrupt
         }else{
+#endif
             Wire.beginTransmission(RTC_PCF_ADDR);
             if(!Wire.endTransmission()) {
                 RTCType = PCF8563; Operational = true; rtc_pcf.clearStatus(); Wire.beginTransmission(0xa3>>1); Wire.write(0x09); Wire.write(0x80); Wire.write(0x80); Wire.write(0x80); Wire.write(0x80); Wire.write(0x0); Wire.write(0x0); Wire.endTransmission();
                 if ((analogReadMilliVolts(34) / 500.0f) > 1) { ADC_PIN = 34; WatchyHWVer = 2.0; }	// Find the battery to determine hardware version.
                 if ((analogReadMilliVolts(35) / 500.0f) > 1) { ADC_PIN = 35; WatchyHWVer = 1.5; }
             }
+#ifndef SMALL_RTC_NO_DS3232
         }
+#endif
     }
     if (WatchyHWVer == 0){ /* Try to find it by way of battery */
         if ((analogReadMilliVolts(33) / 500.0f) > 1) { ADC_PIN = 33; WatchyHWVer = 1.0; }
@@ -119,6 +123,7 @@ void SmallRTC::setDateTime(String datetime){
     tv.tv_sec = t;
     settimeofday(&tv,0);
     SmallRTC::driftReset(t,true);
+#ifndef SMALL_RTC_NO_DS3232
     if (RTCType == DS3231){
         tm.Wday++;
         rtc_ds.write(tm);
@@ -132,6 +137,7 @@ void SmallRTC::setDateTime(String datetime){
         checkStatus();
         rtc_ds.read(tst);
     }else if (RTCType == PCF8563){
+#endif
         //day, weekday, month, century(1=1900, 0=2000), year(0-99)
         rtc_pcf.setDate(tm.Day, tm.Wday, tm.Month, 0, tmYearToY2k(tm.Year)); //DS3231 has Wday range of 1-7, but TimeLib & PCF8563 require day of week in 0-6 range.
         //hr, min, sec
@@ -143,7 +149,9 @@ void SmallRTC::setDateTime(String datetime){
         tst.Hour = rtc_pcf.getHour();
         tst.Minute = rtc_pcf.getMinute();
         SmallRTC::driftReset(t,false);
+#ifndef SMALL_RTC_NO_DS3232
      }
+#endif
     SRTCDrift.NewMin = millis() + (60 - tm.Second) * 1000;
     if (Operational) Operational = (tm.Year == tst.Year && tm.Month == tst.Month && tm.Day == tst.Day && tm.Hour == tst.Hour && tm.Minute == tst.Minute);
 }
@@ -160,6 +168,7 @@ void SmallRTC::read(tmElements_t &tm, bool Internal){
         SRTCDrift.ESPRTC.Drifted = false;
         SmallRTC::manageDrift(ti,true);
         tm=ti;
+#ifndef SMALL_RTC_NO_DS3232
     }else if (RTCType == DS3231){
         rtc_ds.read(tm);
         SRTCDrift.NewMin = millis() + (60 - tm.Second) * 1000;
@@ -170,6 +179,7 @@ void SmallRTC::read(tmElements_t &tm, bool Internal){
         SRTCDrift.EXTRTC.Drifted = false;
         SmallRTC::manageDrift(ti,true);
         SmallRTC::manageDrift(tm,false);
+#endif
     }else if (RTCType == PCF8563){
         tm.Year = y2kYearToTm(rtc_pcf.getYear());
         tm.Month = rtc_pcf.getMonth() - 1;
@@ -201,6 +211,7 @@ void SmallRTC::set(tmElements_t tm, bool Enforce, bool Internal){
         settimeofday(&tv,0);
     }
     if (!(!Enforce || (Enforce && !Internal))) return;
+#ifndef SMALL_RTC_NO_DS3232
     if (RTCType == DS3231){
         tm.Wday++;
         tm.Month++;
@@ -215,6 +226,9 @@ void SmallRTC::set(tmElements_t tm, bool Enforce, bool Internal){
         checkStatus();
         rtc_ds.read(tst);
     }else if (RTCType == PCF8563){
+#else
+    if (RTCType == PCF8563){
+#endif
         SmallRTC::BreakTime(t, tm); //make and break to calculate tm.Wday
         //day, weekday, month, century(1=1900, 0=2000), year(0-99)
         rtc_pcf.setDate(tm.Day, tm.Wday, tm.Month + 1, 0, tmYearToY2k(tm.Year)); //DS3231 has Wday range of 1-7, but TimeLib & PCF8563 require day of week in 0-6 range.
@@ -312,8 +326,12 @@ bool SmallRTC::updatedDrift(bool Internal){ if (Internal) return SRTCDrift.ESPRT
 bool SmallRTC::checkingDrift(bool Internal){ if (Internal) return (SRTCDrift.ESPRTC.Begin != 0); else return (SRTCDrift.EXTRTC.Begin != 0); }
 
 void SmallRTC::clearAlarm(){
+#ifndef SMALL_RTC_NO_DS3232
     if (RTCType == DS3231) rtc_ds.clearAlarm(DS3232RTC::ALARM_2); //resets the alarm flag in the RTC
     else if (RTCType == PCF8563) rtc_pcf.clearAlarm();
+#else
+    if (RTCType == PCF8563) rtc_pcf.clearAlarm();
+#endif
 }
 
 void SmallRTC::nextMinuteWake(bool Enabled){
@@ -331,6 +349,7 @@ void SmallRTC::atMinuteWake(uint8_t Minute, bool Enabled){
         X = (Minute % 60) - t.Minute; if (X < 0) X += 60;
         T = ((X * 60) - t.Second) * 1000000;
         esp_sleep_enable_timer_wakeup(T);
+#ifndef SMALL_RTC_NO_DS3232
 	}else if (RTCType == DS3231){
         //  uint8_t Hour, uint8_t DayOfWeek
         SmallRTC::read(t,false);
@@ -339,6 +358,7 @@ void SmallRTC::atMinuteWake(uint8_t Minute, bool Enabled){
         rtc_ds.clearAlarm(DS3232RTC::ALARM_2); //resets the alarm flag in the RTC
         rtc_ds.setAlarm(DS3232RTC::ALM2_MATCH_MINUTES,(Minute % 60), (t.Hour % 24), (t.Wday % 7) + 1);
         rtc_ds.alarmInterrupt(DS3232RTC::ALARM_2, Enabled);  // Turn interrupt on or off based on Enabled.
+#endif
     }else if (RTCType == PCF8563){
         rtc_pcf.clearAlarm();
         if (Enabled) rtc_pcf.setAlarm((Minute % 60), 99, 99, 99);
@@ -347,7 +367,9 @@ void SmallRTC::atMinuteWake(uint8_t Minute, bool Enabled){
 }
 
 uint8_t SmallRTC::temperature(){
+#ifndef SMALL_RTC_NO_DS3232
     if(RTCType == DS3231) return rtc_ds.temperature();
+#endif
     return 255; //error
 }
 
@@ -371,7 +393,11 @@ void SmallRTC::BreakTime(time_t &T, tmElements_t &TM){
 }
 
 bool SmallRTC::isOperating() { return Operational || RTCType == ESP32 || ForceESP32; }
+#ifndef SMALL_RTC_NO_DS3232
 void SmallRTC::checkStatus(bool ResetOP) { if (Operational && RTCType == DS3231) Operational = !rtc_ds.oscStopped(ResetOP); }
+#else
+void SmallRTC::checkStatus(bool ResetOP) { }
+#endif
 float SmallRTC::getRTCBattery(bool Critical){
     if (RTCType == PCF8563) return (Critical ?  3.45 : 3.58);
     else if (RTCType == DS3231) return (Critical ? 3.65 : 3.69);	// 3.69 : 3.75 (TEST)
