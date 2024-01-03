@@ -47,11 +47,25 @@
  * SOFTWARE.
 */
 
+// Choose your options by editing this file or adding the #defines below prior to this library.
+//  #define SMALL_RTC_NO_DS3232
+//  #define SMALL_RTC_NO_PCF8563
+//  #define SMALL_RTC_NO_INT  
+
 #include <TimeLib.h>
 #ifndef SMALL_RTC_NO_DS3232
 #include <DS3232RTC.h>
+#else
+#pragma message "SmallRTC: No support for DS3231M"
 #endif
+#ifndef SMALL_RTC_NO_PCF8563
 #include <Rtc_Pcf8563.h>
+#else
+#pragma message "SmallRTC: No support for PCF8563"
+#endif
+#ifdef SMALL_RTC_NO_INT
+#pragma message "SmallRTC: No support for ESP32 RTC"
+#endif
 #include <Wire.h>
 #include <esp_system.h>
 #include <time.h>
@@ -84,7 +98,9 @@ class SmallRTC {
 #ifndef SMALL_RTC_NO_DS3232
         DS3232RTC rtc_ds;
 #endif
+#ifndef SMALL_RTC_NO_PCF8563
         Rtc_Pcf8563 rtc_pcf;
+#endif
     public:
         SmallRTC();
         void init();
