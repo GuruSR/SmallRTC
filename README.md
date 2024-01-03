@@ -1,4 +1,4 @@
-# SmallRTC 2.3  [![Arduino Lint](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml/badge.svg)](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml)
+# SmallRTC 2.3.1  [![Arduino Lint](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml/badge.svg)](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml)
 A WatchyRTC replacement that offers more functionality, correct time.h and timelib.h operation and is NTP safe.
 
 Functions and their usage:
@@ -102,3 +102,12 @@ to
 `#include <~/.platformio/packages/toolchain-xtensa-esp32/xtensa-esp32-elf/include/sys/time.h>`  <- Linux
 
 And compile.
+
+For those not wanting the DS3232RTC or the PCF8563 or even the ESP32 Internal, you can now disable them via #defines.
+Just be sure these are before your `#include <SmallRTC.h>`:
+
+`#define SMALL_RTC_NO_DS3232`  
+`#define SMALL_RTC_NO_PCF8563`  
+`#define SMALL_RTC_NO_INT`
+
+Remember, you need at least 1 present for the RTC code to do anything.
