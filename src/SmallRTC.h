@@ -48,7 +48,9 @@
 */
 
 #include <TimeLib.h>
+#ifndef SMALL_RTC_NO_DS3232
 #include <DS3232RTC.h>
+#endif
 #include <Rtc_Pcf8563.h>
 #include <Wire.h>
 #include <esp_system.h>
@@ -79,7 +81,9 @@ RTC_DATA_ATTR struct GSRDrift final {
 
 class SmallRTC {
     public:
+#ifndef SMALL_RTC_NO_DS3232
         DS3232RTC rtc_ds;
+#endif
         Rtc_Pcf8563 rtc_pcf;
     public:
         SmallRTC();
