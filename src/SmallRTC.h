@@ -18,6 +18,8 @@
  * Version 2.1, May      30, 2022 : Fix PCF.
  * Version 2.2, May       5, 2023 : Added functionality to keep this version alive.
  * Version 2.3, December 17, 2023 : Added ESP32 internal RTC functionality instead of keeping in Active Mode, 32bit drift (in 100ths of a second).
+ * Version 2.3.1 January  2, 2024 : Added #define limitations to remove RTC versions you don't want to support.
+ * Version 2.3.2 January  6, 2024 : Added atTimeWake function for specifying the hour and minute to wake the RTC up.
  *
  * This library offers an alternative to the WatchyRTC library, but also provides a 100% time.h and timelib.h
  * compliant RTC library.
@@ -110,6 +112,7 @@ class SmallRTC {
         void clearAlarm();
         void nextMinuteWake(bool Enabled = true);
         void atMinuteWake(uint8_t Minute, bool Enabled = true);
+        void atTimeWake(uint8_t Hour, uint8_t Minute, bool Enabled = true);
         uint8_t temperature();
         uint8_t getType();
         uint32_t getADCPin();
@@ -136,6 +139,7 @@ class SmallRTC {
         void driftReset(time_t t, bool Internal);
         void manageDrift(tmElements_t &TM, bool Internal);
         void checkStatus(bool ResetOP = false);
+        void atMinuteWake(uint8_t Hour, uint8_t Minute, bool Enabled = true);
         String _getValue(String data, char separator, int index);
 };
 #endif
