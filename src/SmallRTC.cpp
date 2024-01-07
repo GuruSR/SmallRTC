@@ -19,6 +19,7 @@
  * Version 2.3, December 17, 2023 : Added ESP32 internal RTC functionality instead of keeping in Active Mode, 32bit drift (in 100ths of a second).
  * Version 2.3.1 January  2, 2024 : Added #define limitations to remove RTC versions you don't want to support.
  * Version 2.3.2 January  6, 2024 : Added atTimeWake function for specifying the hour and minute to wake the RTC up.
+ * Version 2.3.3 January  7, 2024 : Arduino bump due to bug.
  *
  * This library offers an alternative to the WatchyRTC library, but also provides a 100% time.h and timelib.h
  * compliant RTC library.
