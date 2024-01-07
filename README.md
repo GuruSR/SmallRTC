@@ -1,4 +1,4 @@
-# SmallRTC 2.3.1  [![Arduino Lint](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml/badge.svg)](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml)
+# SmallRTC 2.3.2  [![Arduino Lint](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml/badge.svg)](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml)
 A WatchyRTC replacement that offers more functionality, correct time.h and timelib.h operation and is NTP safe.
 
 Functions and their usage:
@@ -17,6 +17,9 @@ Functions and their usage:
 
 **atMinuteWake(uint8_t Minute, bool Enabled = true):**
 Use this instead of `nextMinuteWake`, as this will make the RTC wake up when the Minute data element matches the Minute you give it.  Just like `nextMinuteWake` it can use False (optional) here to also stop the wake up from happening.
+
+**atTimeWake(uint8_t Hour, uint8_t Minute, bool Enabled = true):**
+Use this function to request the RTC to wake up on the hour and minute, for Midnight the hour has to be set to **24**.
 
 **uint8_t temperature():** Imported from WatchyRTC for compatibility.
 
