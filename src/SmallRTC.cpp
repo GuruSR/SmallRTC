@@ -367,7 +367,7 @@ void SmallRTC::nextMinuteWake(bool Enabled){
 
 void SmallRTC::atTimeWake(uint8_t Hour, uint8_t Minute, bool Enabled){ SmallRTC::atMinuteWake(Hour,Minute,Enabled); }
 void SmallRTC::atMinuteWake(uint8_t Minute, bool Enabled) { SmallRTC::atMinuteWake(0,Minute,Enabled); }
-void SmallRTC::atMinuteWake(uint8_t Hour, uint8_t Minute, bool Enabled = true){
+void SmallRTC::atMinuteWake(uint8_t Hour, uint8_t Minute, bool Enabled){
     tmElements_t t;
     int8_t X;
     time_t T;
