@@ -65,13 +65,13 @@ Use this function to request the RTC to wake up on the hour and minute, for Midn
 
 **NOTE:**  For the PCF8563, there are 2 variants, use the RTC.getADCPin() to determine where the UP Button is.
 
-How to use in your Watchy.  Also see [
+How to use in your Watchy:
 
-`#include <SmallRTC.h>`
+`#include <SmallRTC.h>` <- instead of #include "WatchyRTC.h"
 
 `...`
 
-`SmallRTC RTC; // Declare RTC object`
+`SmallRTC RTC; // Declare RTC object` <- Instead of WatchyRTC RTC;
 
 Use the functions as you need to, though I would recommend including SmallNTP and Olson2POSIX for a complete suite of functionality.
 
@@ -101,7 +101,7 @@ In SmallRTC.h, change:
   
 to 
   
-`#include <C:\Users\[username]\.platformio\packages\toolchain-xtensa-esp32\xtensa-esp32-elf\include\sys\time.h>`  <- Windows  
+`#include <%USERPROFILE%\.platformio\packages\toolchain-xtensa-esp32\xtensa-esp32-elf\include\sys\time.h>`  <- Windows  
 `#include <~/.platformio/packages/toolchain-xtensa-esp32/xtensa-esp32-elf/include/sys/time.h>`  <- Linux
 
 And compile.
