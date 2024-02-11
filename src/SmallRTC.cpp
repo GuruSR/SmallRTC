@@ -3,23 +3,24 @@
 /* SmallRTC by GuruSR (https://www.github.com/GuruSR/SmallRTC)
  * Originally forked from WatchyRTC with a variety of fixes and improvements.
  *
- * Version 1.0, January   2, 2022
- * Version 1.1, January   4, 2022 : Correct Months from 1 to 12 to 0 to 11.
- * Version 1.2, January   7, 2022 : Added atMinuteWake to enable minute based wakeup.
- * Version 1.3, January  28, 2022 : Corrected atMinuteWake missing AlarmInterrupt & moved ClearAlarm around.
- * Version 1.4, January  29, 2022 : Added Make & Break Time functions to MATCH TimeLib & time.h by reducing Month and Wday.
- * Version 1.5, January  30, 2022 : Fixed atMinuteWake to require extra values for DS3231M to work properly.
- * Version 1.6, February 17, 2022 : Added isOperating for the DS3231M to detect if the Oscillator has stopped.
- * Version 1.7, March    15, 2022 : Added Status, Squarewave & Timer reset to init for PCF8563.
- * Version 1.8, March    29, 2022 : Added support for 2 variations of PCF8563 battery location.
- * Version 1.9, April     4, 2022 : Added support for DS3232RTC version 2.0 by customizing defines.
- * Version 2.0, April    30, 2022 : Removed Constrain which was causing 59 minute stall.
- * Version 2.1, May      30, 2022 : Fix PCF.
- * Version 2.2, May       5, 2023 : Added functionality to keep this version alive.
- * Version 2.3, December 17, 2023 : Added ESP32 internal RTC functionality instead of keeping in Active Mode, 32bit drift (in 100ths of a second).
- * Version 2.3.1 January  2, 2024 : Added #define limitations to remove RTC versions you don't want to support.
- * Version 2.3.2 January  6, 2024 : Added atTimeWake function for specifying the hour and minute to wake the RTC up.
- * Version 2.3.3 January  7, 2024 : Arduino bump due to bug.
+ * Version 1.0, January    2, 2022
+ * Version 1.1, January    4, 2022 : Correct Months from 1 to 12 to 0 to 11.
+ * Version 1.2, January    7, 2022 : Added atMinuteWake to enable minute based wakeup.
+ * Version 1.3, January   28, 2022 : Corrected atMinuteWake missing AlarmInterrupt & moved ClearAlarm around.
+ * Version 1.4, January   29, 2022 : Added Make & Break Time functions to MATCH TimeLib & time.h by reducing Month and Wday.
+ * Version 1.5, January   30, 2022 : Fixed atMinuteWake to require extra values for DS3231M to work properly.
+ * Version 1.6, February  17, 2022 : Added isOperating for the DS3231M to detect if the Oscillator has stopped.
+ * Version 1.7, March     15, 2022 : Added Status, Squarewave & Timer reset to init for PCF8563.
+ * Version 1.8, March     29, 2022 : Added support for 2 variations of PCF8563 battery location.
+ * Version 1.9, April      4, 2022 : Added support for DS3232RTC version 2.0 by customizing defines.
+ * Version 2.0, April     30, 2022 : Removed Constrain which was causing 59 minute stall.
+ * Version 2.1, May       30, 2022 : Fix PCF.
+ * Version 2.2, May        5, 2023 : Added functionality to keep this version alive.
+ * Version 2.3, December  17, 2023 : Added ESP32 internal RTC functionality instead of keeping in Active Mode, 32bit drift (in 100ths of a second).
+ * Version 2.3.1 January   2, 2024 : Added #define limitations to remove RTC versions you don't want to support.
+ * Version 2.3.2 January   6, 2024 : Added atTimeWake function for specifying the hour and minute to wake the RTC up.
+ * Version 2.3.3 January   7, 2024 : Arduino bump due to bug.
+ * Version 2.3.4 February 11, 2024 : Fixed ESP32 define to be specific to RTC.
  *
  * This library offers an alternative to the WatchyRTC library, but also provides a 100% time.h and timelib.h
  * compliant RTC library.
@@ -76,7 +77,7 @@ void SmallRTC::init(){
 #ifndef SMALL_RTC_NO_INT
     esp_chip_info_t chip_info[sizeof(esp_chip_info_t)];
     esp_chip_info(chip_info);
-    if (chip_info->model == CHIP_ESP32C3) { RTCType = ESP32; Operational = true; ADC_PIN = 9; WatchyHWVer = 3.0; }
+    if (chip_info->model == CHIP_ESP32C3) { RTCType = RTC_ESP32; Operational = true; ADC_PIN = 9; WatchyHWVer = 3.0; }
     else{
 #else
     if (1){
@@ -181,7 +182,7 @@ void SmallRTC::read(tmElements_t &tm, bool Internal){
     gettimeofday(&tv,0);
     SmallRTC::BreakTime(tv.tv_sec, ti);
 	checkStatus();
-    if (RTCType == ESP32 || ForceESP32 || Internal){
+    if (RTCType == RTC_ESP32 || ForceESP32 || Internal){
         SRTCDrift.NewMin = millis() + (60 - ti.Second) * 1000;
         SRTCDrift.ESPRTC.Drifted = false;
         SmallRTC::manageDrift(ti,true);
@@ -374,7 +375,7 @@ void SmallRTC::atMinuteWake(uint8_t Hour, uint8_t Minute, bool Enabled){
     time_t T;
     bool bHour; // Match Hour too.
 #ifndef SMALL_RTC_NO_INT
-    if (RTCType == ESP32 || ForceESP32){
+    if (RTCType == RTC_ESP32 || ForceESP32){
         SmallRTC::read(t,true);
         X = (Minute % 60) - t.Minute; if (X < 0) X += 60;
         T = ((X * 60) - t.Second) * 1000000;
@@ -417,10 +418,10 @@ uint16_t SmallRTC::getLocalYearOffset(){ return 1900; }
 float SmallRTC::getWatchyHWVer(){ return WatchyHWVer; }
 void SmallRTC::UseESP32(bool Enforce) {
 #ifndef SMALL_RTC_NO_INT
- if (RTCType != ESP32) ForceESP32 = Enforce;
+ if (RTCType != RTC_ESP32) ForceESP32 = Enforce;
 #endif
 }
-bool SmallRTC::OnESP32() { if (RTCType != ESP32) return ForceESP32; return false; }
+bool SmallRTC::OnESP32() { if (RTCType != RTC_ESP32) return ForceESP32; return false; }
 
 time_t SmallRTC::MakeTime(tmElements_t TM){
     TM.Month++;
@@ -434,7 +435,7 @@ void SmallRTC::BreakTime(time_t &T, tmElements_t &TM){
     TM.Wday--;
 }
 
-bool SmallRTC::isOperating() { return Operational || RTCType == ESP32 || ForceESP32; }
+bool SmallRTC::isOperating() { return Operational || RTCType == RTC_ESP32 || ForceESP32; }
 void SmallRTC::checkStatus(bool ResetOP) {
 #ifndef SMALL_RTC_NO_DS3232
     if (Operational && RTCType == DS3231) Operational = !rtc_ds.oscStopped(ResetOP);
