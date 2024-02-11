@@ -1,4 +1,4 @@
-# SmallRTC 2.3.3  [![Arduino Lint](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml/badge.svg)](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml)
+# SmallRTC 2.3.4  [![Arduino Lint](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml/badge.svg)](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml)
 A WatchyRTC replacement that offers more functionality, correct time.h and timelib.h operation and is NTP safe.
 
 Functions and their usage:
