@@ -1,5 +1,7 @@
-# SmallRTC 2.3.4  [![Arduino Lint](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml/badge.svg)](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml)
+# SmallRTC 2.3.5  [![Arduino Lint](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml/badge.svg)](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml)
 A WatchyRTC replacement that offers more functionality, correct time.h and timelib.h operation and is NTP safe.
+
+Function names changed in Version 2.3.5, please be aware of them.
 
 Functions and their usage:
 
@@ -35,9 +37,9 @@ Use this function to request the RTC to wake up on the hour and minute, for Midn
 
 **bool OnESP32():**  Returns `true` if the Internal RTC is being used (by way of enforcement or hardware version).
 
-**time_t MakeTime(tmElements_t TM)** A TimeLib.h & time.h compliant version of `makeTime()`.
+**time_t doMakeTime(tmElements_t TM)** A TimeLib.h & time.h compliant version of `makeTime()`.
 
-**BreakTime(time_t &T, tmElements_t &TM)**  TimeLib.h & time.h compliant version of `breakTime()`.
+**doBreakTime(time_t &T, tmElements_t &TM)**  TimeLib.h & time.h compliant version of `breakTime()`.
 
 **bool isOperating()** Returns `true` if the RTC is working properly.
 
