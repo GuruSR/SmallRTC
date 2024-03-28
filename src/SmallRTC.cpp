@@ -857,7 +857,7 @@ SmallRTC::atMinuteWake (uint8_t hour, uint8_t minute, bool enabled)
 
         T = ((X * 60) - t.Second) * 1000000;
 
-        if (hour)
+        if (hour != 99)
         {
             X = (hour % 24) - t.Hour;
             if (X < 0)
@@ -881,7 +881,7 @@ SmallRTC::atMinuteWake (uint8_t hour, uint8_t minute, bool enabled)
         //  uint8_t Hour, uint8_t DayOfWeek
         SmallRTC::read (t, false);
 
-        if (!hour)
+        if (hour != 99)
         {
 
             bHour = true;
