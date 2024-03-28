@@ -49,8 +49,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
-*/ 
-  
+*/
+
 RTC_DATA_ATTR uint8_t m_rtctype;
 
 RTC_DATA_ATTR uint32_t m_adc_pin;
@@ -63,47 +63,47 @@ RTC_DATA_ATTR bool b_forceesp32;
 
 RTC_DATA_ATTR gsrdrift __srtcdrift;
 
- 
+
 SmallRTC::SmallRTC ()
 {
 }
- 
+
 struct timeval tv;
 
- 
+
 void
 SmallRTC::init ()
 {
-  
+
     uint8_t controlReg, mask;
-  
+
     m_rtctype = RTC_UNKNOWN;
-  
+
     m_adc_pin = 0;
-  
+
     f_watchyhwver = 0;
-  
+
     __srtcdrift.esprtc.drift = 0;
-  
+
     __srtcdrift.extrtc.drift = 0;
-  
+
     __srtcdrift.esprtc.begin = 0;
-  
+
     __srtcdrift.extrtc.begin = 0;
-  
+
     __srtcdrift.esprtc.slush = 0;
-  
+
     __srtcdrift.extrtc.slush = 0;
-  
+
     __srtcdrift.esprtc.fast = false;
-  
+
     __srtcdrift.extrtc.fast = false;
-  
+
 #ifndef SMALL_RTC_NO_INT
     esp_chip_info_t chip_info[sizeof (esp_chip_info_t)];
-  
+
     esp_chip_info (chip_info);
-  
+
     if (chip_info->model == CHIP_ESP32C3)
     {
 
@@ -113,25 +113,23 @@ SmallRTC::init ()
         f_watchyhwver = 3.0;
 
     }
-  
+
   else
     {
-      
-#else    /* 
- */
+
+#else
     if (1)
     {
-      
-#endif    /* 
- */
+
+#endif
         Wire.begin ();
-      
+
 #ifndef SMALL_RTC_NO_DS3232
         Wire.beginTransmission (RTC_DS_ADDR);
-      
+
         if (!Wire.endTransmission ())
         {
-          
+
             m_rtctype = RTC_DS3231;
             m_adc_pin = 33;
             f_watchyhwver = 1.0;
@@ -139,7 +137,7 @@ SmallRTC::init ()
             controlReg = rtc_ds.readRTC (0x0E);
 
             mask = _BV (7);
-          
+
             if (controlReg & mask)
             {
 
@@ -148,28 +146,27 @@ SmallRTC::init ()
                 rtc_ds.writeRTC (0x0E, controlReg);
 
             }
-          
+
             b_operational = true;
-          
+
             checkStatus (b_operational);
-          
+
             rtc_ds.squareWave (DS3232RTC::SQWAVE_NONE);    //disable square wave output
             rtc_ds.alarm (DS3232RTC::ALARM_2);
-          
+
             rtc_ds.setAlarm (DS3232RTC::ALM2_EVERY_MINUTE, 0, 0, 0, 0);    //alarm wakes up Watchy every minute
             rtc_ds.alarmInterrupt (DS3232RTC::ALARM_2, true);    //enable alarm interrupt
         }
       else
         {
-          
-#endif    /* 
- */
+
+#endif
 #ifndef SMALL_RTC_NO_PCF8563
             Wire.beginTransmission (RTC_PCF_ADDR);
-          
+
             if (!Wire.endTransmission ())
             {
-              
+
                 m_rtctype = RTC_PCF8563;
                 b_operational = true;
                 rtc_pcf.clearStatus ();
@@ -182,7 +179,7 @@ SmallRTC::init ()
                 Wire.write (0x0);
                 Wire.write (0x0);
                 Wire.endTransmission ();
-              
+
                 if ((analogReadMilliVolts (34) / 500.0f) > 2)
                 {
 
@@ -193,26 +190,24 @@ SmallRTC::init ()
 
                 if ((analogReadMilliVolts (35) / 500.0f) > 2)
                 {
-              
+
                     m_adc_pin = 35;
                     f_watchyhwver = 1.5;
 
                 }
-            
+
             }
-          
-#endif    /* 
- */
+
+#endif
 #ifndef SMALL_RTC_NO_DS3232
         }
-      
-#endif    /* 
- */
+
+#endif
     }
-  
+
     if (f_watchyhwver == 0)
     {                            /* Try to find it by way of battery */
-      
+
 #ifndef SMALL_RTC_NO_DS3232
         if ((analogReadMilliVolts (33) / 500.0f) > 2)
         {
@@ -221,9 +216,8 @@ SmallRTC::init ()
             f_watchyhwver = 1.0;
 
         }
-      
-#endif    /* 
- */
+
+#endif
 #ifndef SMALL_RTC_NO_PCF8563
         if ((analogReadMilliVolts (34) / 500.0f) > 2)
         {
@@ -232,7 +226,7 @@ SmallRTC::init ()
             f_watchyhwver = 2.0;
 
         }
-      
+
         if ((analogReadMilliVolts (35) / 500.0f) > 2)
         {
 
@@ -240,9 +234,8 @@ SmallRTC::init ()
             f_watchyhwver = 1.5;
 
         }
-      
-#endif    /* 
- */
+
+#endif
     }
 
 }
@@ -253,63 +246,61 @@ SmallRTC::setDateTime (String datetime)
 {
 
     tmElements_t tm, tst;
-  
+
     uint8_t controlReg, mask;
-  
+
     tm.Year = CalendarYrToTm (_getValue (datetime, ':', 0).toInt ());    //YYYY - 1970
     tm.Month = _getValue (datetime, ':', 1).toInt ();
-  
+
     tm.Day = _getValue (datetime, ':', 2).toInt ();
-  
+
     tm.Hour = _getValue (datetime, ':', 3).toInt ();
-  
+
     tm.Minute = _getValue (datetime, ':', 4).toInt ();
-  
+
     tm.Second = _getValue (datetime, ':', 5).toInt ();
-  
+
 #ifndef SMALL_RTC_NO_INT
     time_t t = SmallRTC::doMakeTime (tm);    //make and break to calculate tm.Wday
     SmallRTC::doBreakTime (t, tm);
-  
+
     tv.tv_sec = t;
-  
+
     settimeofday (&tv, 0);
-  
+
     SmallRTC::driftReset (t, true);
-  
-#endif    /* 
- */
+
+#endif
 #ifndef SMALL_RTC_NO_DS3232
     if (m_rtctype == RTC_DS3231)
     {
-      
+
         tm.Wday++;
-      
+
         rtc_ds.write (tm);
-      
+
         SmallRTC::driftReset (t, false);
-      
+
         controlReg = rtc_ds.readRTC (0x0E);
-      
+
         mask = _BV (7);
-      
+
         if (controlReg & mask)
         {
-          
+
             controlReg &= ~mask;
-          
+
             rtc_ds.writeRTC (0x0E, controlReg);
-        
+
         }
-      
+
     checkStatus ();
-      
+
     rtc_ds.read (tst);
 
 }
 
-#endif    /* 
- */
+#endif
 #ifndef SMALL_RTC_NO_PCF8563
     if (m_rtctype == RTC_PCF8563)
     {
@@ -318,25 +309,25 @@ SmallRTC::setDateTime (String datetime)
         rtc_pcf.setDate (tm.Day, tm.Wday, tm.Month, 0, tmYearToY2k (tm.Year));    //DS3231 has Wday range of 1-7, but TimeLib & PCF8563 require day of week in 0-6 range.
         //hr, min, sec
         rtc_pcf.setTime (tm.Hour, tm.Minute, tm.Second);
-      
+
         rtc_pcf.clearStatus ();
-      
+
         tst.Year = y2kYearToTm (rtc_pcf.getYear ());
-      
+
         tst.Month = rtc_pcf.getMonth () - 1;
-      
+
         tst.Day = rtc_pcf.getDay ();
-      
+
         tst.Hour = rtc_pcf.getHour ();
-      
+
         tst.Minute = rtc_pcf.getMinute ();
-      
+
         SmallRTC::driftReset (t, false);
 
     }
-  
+
     __srtcdrift.newmin = millis () + (60 - tm.Second) * 1000;
-  
+
     if (b_operational)
     {
 
@@ -346,8 +337,7 @@ SmallRTC::setDateTime (String datetime)
 
     }
 
-#endif    /* 
- */
+#endif
 }
 
 
@@ -358,7 +348,7 @@ SmallRTC::read (tmElements_t & p_tmoutput)
     SmallRTC::read (p_tmoutput, false);
 
 }
- 
+
 void
 
 SmallRTC::read (tmElements_t & p_tmoutput, bool internal)
@@ -366,88 +356,85 @@ SmallRTC::read (tmElements_t & p_tmoutput, bool internal)
 
 #ifndef SMALL_RTC_NO_INT
     tmElements_t ti;            /* Internal Only */
-  
+
     gettimeofday (&tv, 0);
-  
+
     SmallRTC::doBreakTime (tv.tv_sec, ti);
-  
+
     checkStatus ();
-  
+
     if (m_rtctype == RTC_ESP32 || b_forceesp32 || internal)
     {
-      
+
         __srtcdrift.newmin = millis () + (60 - ti.Second) * 1000;
-      
+
         __srtcdrift.esprtc.drifted = false;
-      
+
         SmallRTC::manageDrift (ti, true);
-      
+
         p_tmoutput = ti;
-    
+
     }
-  
-#endif    /* 
- */
+
+#endif
 #ifndef SMALL_RTC_NO_DS3232
     if (m_rtctype == RTC_DS3231)
     {
-      
+
         rtc_ds.read (p_tmoutput);
-      
+
         __srtcdrift.newmin = millis () + (60 - p_tmoutput.Second) * 1000;
-      
+
         p_tmoutput.Wday--;
-      
+
         p_tmoutput.Month--;
-      
+
         tv.tv_sec = SmallRTC::doMakeTime (ti);
-      
+
         settimeofday (&tv, 0);
-      
+
         __srtcdrift.extrtc.drifted = false;
-      
+
         SmallRTC::manageDrift (ti, true);
-      
+
         SmallRTC::manageDrift (p_tmoutput, false);
-    
+
     }
-  
-#endif    /* 
- */
+
+#endif
 #ifndef SMALL_RTC_NO_PCF8563
     if (m_rtctype == RTC_PCF8563)
     {
-      
+
         p_tmoutput.Year = y2kYearToTm (rtc_pcf.getYear ());
-      
+
         p_tmoutput.Month = rtc_pcf.getMonth () - 1;
-      
+
         p_tmoutput.Day = rtc_pcf.getDay ();
-      
+
         p_tmoutput.Wday = rtc_pcf.getWeekday ();
-      
+
         p_tmoutput.Hour = rtc_pcf.getHour ();
-      
+
         p_tmoutput.Minute = rtc_pcf.getMinute ();
-      
+
         p_tmoutput.Second = rtc_pcf.getSecond ();
-      
+
         __srtcdrift.newmin = millis () + (60 - p_tmoutput.Second) * 1000;
-      
+
         tv.tv_sec = SmallRTC::doMakeTime (ti);
-      
+
         settimeofday (&tv, 0);
-      
+
         __srtcdrift.extrtc.drifted = false;
-      
+
         SmallRTC::manageDrift (ti, true);
-      
+
         SmallRTC::manageDrift (p_tmoutput, false);
-    
+
     }
-  
-#endif    /* 
- */
+
+#endif
 }
 
 
@@ -457,103 +444,100 @@ SmallRTC::set (tmElements_t tminput)
 
     SmallRTC::set (tminput, false, false);
 
-} 
- 
+}
+
 void
 
 SmallRTC::set (tmElements_t tm, bool enforce, bool internal)
 {
-  
+
     tmElements_t tst;
-  
+
     bool bInt = (!enforce || (enforce && internal));
-  
+
     uint8_t controlReg, mask;
-  
+
     time_t t = SmallRTC::doMakeTime (tm);
-  
+
     __srtcdrift.newmin = millis () + (60 - tm.Second) * 1000;
-  
+
 #ifndef SMALL_RTC_NO_INT
     if (bInt)
     {
-      
+
     SmallRTC::driftReset (t, true);
-      
+
     tv.tv_sec = t;
-      
+
     settimeofday (&tv, 0);
-    
+
     }
-  
-#endif    /* 
- */
+
+#endif
 #ifndef SMALL_RTC_NO_DS3232
     if (!(!enforce || (enforce && !internal)))
     {
         return;
     }
- 
+
     if (m_rtctype == RTC_DS3231)
     {
-      
+
         tm.Wday++;
-      
+
         tm.Month++;
-      
+
         rtc_ds.write (tm);
-      
+
         SmallRTC::driftReset (t, false);
-      
+
         controlReg = rtc_ds.readRTC (0x0E);
-      
+
         mask = _BV (7);
-      
+
         if (controlReg & mask)
         {
-          
+
             controlReg &= ~mask;
-          
+
             rtc_ds.writeRTC (0x0E, controlReg);
-        
+
         }
-      
+
         checkStatus ();
-      
+
         rtc_ds.read (tst);
-    
+
     }
-  
-#endif    /* 
- */
+
+#endif
 #ifndef SMALL_RTC_NO_PCF8563
     if (m_rtctype == RTC_PCF8563)
     {
-      
+
         SmallRTC::doBreakTime (t, tm);    //make and break to calculate tm.Wday
               //day, weekday, month, century(1=1900, 0=2000), year(0-99)
               rtc_pcf.setDate (tm.Day, tm.Wday, tm.Month + 1, 0, tmYearToY2k (tm.Year));    //DS3231 has Wday range of 1-7, but TimeLib & PCF8563 require day of week in 0-6 range.
               //hr, min, sec
               SmallRTC::driftReset (t, false);
-      
+
         rtc_pcf.setTime (tm.Hour, tm.Minute, tm.Second);
-      
+
         rtc_pcf.clearStatus ();
-      
+
         tst.Year = y2kYearToTm (rtc_pcf.getYear ());
-      
+
         tst.Month = rtc_pcf.getMonth () - 1;
-      
+
         tst.Day = rtc_pcf.getDay ();
-      
+
         tst.Hour = rtc_pcf.getHour ();
-      
+
         tst.Minute = rtc_pcf.getMinute ();
-    
+
     }
-  
-#endif    /* 
- */
+
+#endif
     if (b_operational)
     {
 
@@ -568,9 +552,9 @@ SmallRTC::set (tmElements_t tm, bool enforce, bool internal)
 void
 SmallRTC::driftReset (time_t t, bool internal)
 {
-  
+
     gsrdrifting* g = (internal) ? &__srtcdrift.esprtc : &__srtcdrift.extrtc;
-  
+
     g->last = t;
 
     g->slush = 0;
@@ -581,17 +565,17 @@ SmallRTC::driftReset (time_t t, bool internal)
 void
 SmallRTC::manageDrift (tmElements_t & p_tminput, bool internal)
 {
-  
+
     double l = 0.0, d = 0.0;
-  
+
     uint32_t v, s;
-  
+
     time_t t = SmallRTC::doMakeTime (p_tminput);
-  
+
     gsrdrifting * g = (internal) ? &__srtcdrift.esprtc : &__srtcdrift.extrtc;
-  
+
     s = 0;
-  
+
     if (g->last == 0)
     {
 
@@ -618,7 +602,7 @@ SmallRTC::manageDrift (tmElements_t & p_tminput, bool internal)
         }
         d = g->slush + (s * g->drift);    // Handle the seconds based on what happened.
         v = floor (d);
-      
+
         t += ((g->fast ? -1 : 1) * s);
 
         SmallRTC::doBreakTime (t, p_tminput);
@@ -642,11 +626,11 @@ SmallRTC::manageDrift (tmElements_t & p_tminput, bool internal)
 void
 SmallRTC::beginDrift (tmElements_t & p_tminput, bool internal)
 {
-  
+
     gsrdrifting * g = (internal) ? &__srtcdrift.esprtc : &__srtcdrift.extrtc;
-  
+
     time_t T = SmallRTC::doMakeTime (p_tminput);
-  
+
     if (g->begin == 0)
     {
 
@@ -667,34 +651,34 @@ SmallRTC::pauseDrift (bool Pause)
     __srtcdrift.paused = Pause;
 
 }
- 
+
 void
 
 SmallRTC::endDrift (tmElements_t & p_tminput, bool internal)
 {
-  
+
 gsrdrifting * g = (internal) ? &__srtcdrift.esprtc : &__srtcdrift.extrtc;
-  
+
 time_t t = SmallRTC::doMakeTime (p_tminput);
-  
+
 time_t o;
-  
+
 tmElements_t oT;
-  
+
 int64_t d;
-  
+
 float f;
-  
+
 SmallRTC::read (oT, internal);
-  
+
 o = SmallRTC::doMakeTime (oT);
-  
+
 if (g->begin != 0)
     {
-      
+
 d = (t - o);
       f = o - g->begin;
-      
+
         if (d != 0)
         {
 
@@ -718,20 +702,20 @@ d = (t - o);
 
 }
 
- 
+
 uint32_t
 SmallRTC::getDrift (bool internal)
 {
-  
+
     float
         T = (internal) ? __srtcdrift.esprtc.drift : __srtcdrift.extrtc.drift;
-  
+
     uint32_t O;
-  
+
     T *= 100.0;
-  
+
     O = T;
-  
+
     return O;
 
 }
@@ -748,8 +732,8 @@ SmallRTC::setDrift (uint32_t drift, bool isfast, bool internal)
     g->drift = (T / 100.0);
     g->fast = isfast;
 
-} 
- 
+}
+
 
 bool
 SmallRTC::isFastDrift (bool internal)
@@ -806,8 +790,7 @@ if (m_rtctype == RTC_DS3231)
         return;
 
     }
-#endif    /* 
- */
+#endif
 #ifndef SMALL_RTC_NO_PCF8563
 if (m_rtctype == RTC_PCF8563)
     {
@@ -815,11 +798,10 @@ if (m_rtctype == RTC_PCF8563)
         rtc_pcf.clearAlarm ();
 
     }
-#endif    /* 
- */
+#endif
 }
 
- 
+
 void
 SmallRTC::nextMinuteWake (bool enabled)
 {
@@ -830,7 +812,7 @@ SmallRTC::nextMinuteWake (bool enabled)
 
     atMinuteWake (t.Minute + 1, enabled);
 
-} 
+}
 
 
 void
@@ -839,28 +821,28 @@ SmallRTC::atTimeWake (uint8_t hour, uint8_t minute, bool enabled)
 
     SmallRTC::atMinuteWake (hour, minute, enabled);
 
-} 
+}
 
 
 void
 SmallRTC::atMinuteWake (uint8_t minute, bool enabled)
 {
 
-    SmallRTC::atMinuteWake (0, minute, enabled);
+    SmallRTC::atMinuteWake (99, minute, enabled);
 
-} 
+}
 
 
 void
 SmallRTC::atMinuteWake (uint8_t hour, uint8_t minute, bool enabled)
 {
-  
+
     tmElements_t t;
-      
+
     int8_t X;
-      
+
     time_t T;
-      
+
     bool bHour;                    // Match Hour too.
 
 #ifndef SMALL_RTC_NO_INT
@@ -890,16 +872,15 @@ SmallRTC::atMinuteWake (uint8_t hour, uint8_t minute, bool enabled)
         esp_sleep_enable_timer_wakeup (T);
 
     }
-  
-#endif    /* 
- */
+
+#endif
 #ifndef SMALL_RTC_NO_DS3232
     if (m_rtctype == RTC_DS3231)
     {
 
         //  uint8_t Hour, uint8_t DayOfWeek
         SmallRTC::read (t, false);
-      
+
         if (!hour)
         {
 
@@ -913,7 +894,7 @@ SmallRTC::atMinuteWake (uint8_t hour, uint8_t minute, bool enabled)
             hour++;
 
         }
-      
+
         if (hour > 23 || hour < t.Hour)
         {
 
@@ -926,29 +907,22 @@ SmallRTC::atMinuteWake (uint8_t hour, uint8_t minute, bool enabled)
         setAlarm ((bHour ? DS3232RTC::ALM2_MATCH_HOURS : DS3232RTC::
                    ALM2_MATCH_MINUTES), (minute % 60), (hour % 24),
                   (t.Wday % 7) + 1);
-      
+
         rtc_ds.alarmInterrupt (DS3232RTC::ALARM_2, enabled);    // Turn interrupt on or off based on Enabled.
 
     }
-  
-#endif    /* 
- */
+
+#endif
 #ifndef SMALL_RTC_NO_PCF8563
     if (m_rtctype == RTC_PCF8563)
     {
 
         rtc_pcf.clearAlarm ();
-          
-        if (hour)
+
+        if (hour != 99)
         {
 
             hour %= 24;
-
-        }
-        else
-        {
-
-            hour = 99;
 
         }
 
@@ -966,12 +940,11 @@ SmallRTC::atMinuteWake (uint8_t hour, uint8_t minute, bool enabled)
         }
 
     }
-  
-#endif    /* 
- */
+
+#endif
 }
 
- 
+
 uint8_t
 SmallRTC::temperature ()
 {
@@ -984,13 +957,12 @@ SmallRTC::temperature ()
 
     }
 
-#endif    /* 
- */
+#endif
     return 255;                    //error
 
 }
 
- 
+
 uint8_t
 SmallRTC::getType ()
 {
@@ -1030,7 +1002,7 @@ SmallRTC::getWatchyHWVer ()
 void
 SmallRTC::UseESP32 (bool enforce)
 {
-  
+
 #ifndef SMALL_RTC_NO_INT
     if (m_rtctype != RTC_ESP32)
     {
@@ -1039,8 +1011,7 @@ SmallRTC::UseESP32 (bool enforce)
 
     }
 
-#endif    /* 
- */
+#endif
 }
 
 
@@ -1058,7 +1029,7 @@ SmallRTC::OnESP32 ()
 
 }
 
- 
+
 time_t
 SmallRTC::doMakeTime (tmElements_t tminput)
 {
@@ -1071,7 +1042,7 @@ SmallRTC::doMakeTime (tmElements_t tminput)
 
 }
 
- 
+
 void
 SmallRTC::doBreakTime (time_t & T, tmElements_t & p_tminout)
 {
@@ -1082,9 +1053,9 @@ SmallRTC::doBreakTime (time_t & T, tmElements_t & p_tminout)
 
     p_tminout.Wday--;
 
-} 
+}
 
- 
+
 bool
 SmallRTC::isOperating ()
 {
@@ -1097,7 +1068,7 @@ SmallRTC::isOperating ()
 void
 SmallRTC::checkStatus (bool reset_op)
 {
-  
+
 #ifndef SMALL_RTC_NO_DS3232
     if (b_operational && m_rtctype == RTC_DS3231)
     {
@@ -1105,16 +1076,15 @@ SmallRTC::checkStatus (bool reset_op)
     b_operational = !rtc_ds.oscStopped (reset_op);
 
     }
-  
-#endif    /* 
- */
+
+#endif
 }
 
 
 float
 SmallRTC::getRTCBattery (bool critical)
 {
-  
+
 #ifndef SMALL_RTC_NO_DS3232
     if (m_rtctype == RTC_PCF8563)
     {
@@ -1122,9 +1092,8 @@ SmallRTC::getRTCBattery (bool critical)
         return (critical ? 3.45 : 3.58);
 
     }
-  
-#endif    /* 
- */
+
+#endif
 #ifndef SMALL_RTC_NO_PCF8563
     if (m_rtctype == RTC_DS3231)
     {
@@ -1132,40 +1101,39 @@ SmallRTC::getRTCBattery (bool critical)
         return (critical ? 3.65 : 3.69);    // 3.69 : 3.75 (TEST)
 
     }
-#endif    /* 
- */
+#endif
     return (critical ? 3.45 : 3.49);
 
 }
 
- 
+
 String
-SmallRTC::_getValue (String data, char separator, int index) 
- { 
+SmallRTC::_getValue (String data, char separator, int index)
+ {
 
     int found = 0;
 
     int strIndex[] = { 0, -1 };
 
     int maxIndex = data.length () - 1;
-  
- 
+
+
 for (int i = 0; i <= maxIndex && found <= index; i++)
     {
 
         if (data.charAt (i) == separator || i == maxIndex)
         {
-          
+
             found++;
-          
+
             strIndex[0] = strIndex[1] + 1;
-          
+
             strIndex[1] = (i == maxIndex) ? i + 1 : i;
-        
+
         }
-    
+
     }
-  
+
     return found > index ? data.substring (strIndex[0], strIndex[1]) : "";
 
 }

@@ -60,22 +60,17 @@
 #include <TimeLib.h>
 #ifndef SMALL_RTC_NO_DS3232
 #include <DS3232RTC.h>
-#else	/* 
- */
+#else
 #pragma message "SmallRTC: No support for DS3231M"
-#endif	/* 
- */
+#endif
 #ifndef SMALL_RTC_NO_PCF8563
 #include <Rtc_Pcf8563.h>
-#else	/* 
- */
+#else
 #pragma message "SmallRTC: No support for PCF8563"
-#endif	/* 
- */
+#endif
 #ifdef SMALL_RTC_NO_INT
 #pragma message "SmallRTC: No support for ESP32 RTC"
-#endif	/* 
- */
+#endif
 #include <Wire.h>
 #include <esp_system.h>
 #include <time.h>
@@ -118,15 +113,13 @@ class SmallRTC
 	public:
 #ifndef SMALL_RTC_NO_DS3232
 		DS3232RTC rtc_ds;
- 
-#endif	/* 
- */
+#endif
+
 #ifndef SMALL_RTC_NO_PCF8563
 		Rtc_Pcf8563 rtc_pcf;
+#endif
 
-#endif	/* 
- */
-	public:
+    public:
 		SmallRTC ();
 
 		void init ();
@@ -187,20 +180,18 @@ class SmallRTC
 
 	private:
 		void set (tmElements_t tm, bool enforce, bool internal);
- 
-		void read (tmElements_t & tm, bool internal);
- 
-		void driftReset (time_t t, bool internal);
- 
-		void manageDrift (tmElements_t & tm, bool internal);
- 
-		void checkStatus (bool reset_op = false);
- 
-		void atMinuteWake (uint8_t hour, uint8_t minute, bool enabled = true);
- 
-		String _getValue (String data, char separator, int index);
 
+		void read (tmElements_t & tm, bool internal);
+
+		void driftReset (time_t t, bool internal);
+
+		void manageDrift (tmElements_t & tm, bool internal);
+
+		void checkStatus (bool reset_op = false);
+
+		void atMinuteWake (uint8_t hour, uint8_t minute, bool enabled = true);
+
+		String _getValue (String data, char separator, int index);
 };
 
-#endif	/* 
- */
+#endif
