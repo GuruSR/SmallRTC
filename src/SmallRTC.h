@@ -23,6 +23,8 @@
  * Version 2.3.3 January   7, 2024 : Arduino bump due to bug.
  * Version 2.3.4 February 11, 2024 : Fixed ESP32 define to be specific to RTC.
  * Version 2.3.5 March     5, 2024 : Fixed copy/paste error and beautified source files, unified rtc type defines.
+ * Version 2.3.6 April     1, 2024 : Fixed atTimeWake and atMinuteWake to use new RTC_OMIT_HOUR define.
+ * Version 2.3.7 July      1, 2024 : Added RTC32K support, force default of internal RTC when no version found.
  *
  * This library offers an alternative to the WatchyRTC library, but also provides a 100% time.h and timelib.h
  * compliant RTC library.
@@ -58,149 +60,173 @@
 //  #define SMALL_RTC_NO_INT  
 
 #include <TimeLib.h>
+
 #ifndef SMALL_RTC_NO_DS3232
+
 #include <DS3232RTC.h>
-#else	/* 
- */
+
+#else
+
 #pragma message "SmallRTC: No support for DS3231M"
-#endif	/* 
- */
+
+#endif
+
 #ifndef SMALL_RTC_NO_PCF8563
+
 #include <Rtc_Pcf8563.h>
-#else	/* 
- */
+
+#else
+
 #pragma message "SmallRTC: No support for PCF8563"
-#endif	/* 
- */
+
+#endif
+
 #ifdef SMALL_RTC_NO_INT
+
 #pragma message "SmallRTC: No support for ESP32 RTC"
-#endif	/* 
- */
+
+#endif
+
 #include <Wire.h>
-#include <esp_system.h>
+
+#include <Arduino.h>
+
 #include <time.h>
 
+#include "soc/rtc.h"
+
+#include "esp_chip_info.h"
+
+
+#define RTC_OMIT_HOUR 255
+
 #define RTC_PCF_ADDR 0x51
+
 #define RTC_DS_ADDR 0x68
-  
-#define	RTC_UNKNOWN 0
-#define	RTC_DS3231 1
-#define	RTC_PCF8563 2
-#define	RTC_ESP32 3
- 
+
+
+#define    RTC_UNKNOWN 0
+
+#define    RTC_DS3231 1
+
+#define    RTC_PCF8563 2
+
+#define    RTC_ESP32 3
+
 struct gsrdrifting final
 { 
 
-	float drift;			// Drift value in seconds (with 2 decimal places).
-	bool fast;				// The drift is fast.
-	double slush;			// This is used to hold the leftover from above when whole numbers accumulate.
-	time_t last;			// Last time it was altered.
-	time_t begin;			// Used to determine when it was started (and if calculation is happening).
-	bool drifted;			// Means the RTC was changed due to drift.
+    float drift;            // Drift value in seconds (with 2 decimal places).
+    bool fast;                // The drift is fast.
+    double slush;            // This is used to hold the leftover from above when whole numbers accumulate.
+    time_t last;            // Last time it was altered.
+    time_t begin;            // Used to determine when it was started (and if calculation is happening).
+    bool drifted;            // Means the RTC was changed due to drift.
 
 };
 
- 
+
 struct gsrdrift final
 {
- 
-	gsrdrifting esprtc;		// Drift value for the internal RTC.
-	gsrdrifting extrtc;		// Drift value for an internal RTC (if one is working/present).
-	uint64_t newmin;		// Detect new minute based on last load using millis.
-	bool paused;			// Means something the user of this library is asking that no drift offsets happen during this time.
+
+    gsrdrifting esprtc;        // Drift value for the internal RTC.
+    gsrdrifting extrtc;        // Drift value for an internal RTC (if one is working/present).
+    uint64_t newmin;        // Detect new minute based on last load using millis.
+    bool paused;            // Means something the user of this library is asking that no drift offsets happen during this time.
 
 };
 
- 
+
 class SmallRTC
 {
 
-	public:
+    public:
 #ifndef SMALL_RTC_NO_DS3232
-		DS3232RTC rtc_ds;
- 
-#endif	/* 
- */
+        DS3232RTC rtc_ds;
+
+#endif
+
 #ifndef SMALL_RTC_NO_PCF8563
-		Rtc_Pcf8563 rtc_pcf;
+        Rtc_Pcf8563 rtc_pcf;
 
-#endif	/* 
- */
-	public:
-		SmallRTC ();
+#endif
 
-		void init ();
+    public:
+        SmallRTC ();
 
-		void setDateTime (String datetime);
+        void init ();
 
-		void read (tmElements_t & p_tmoutput);
+        void setDateTime (String datetime);
 
-		void set (tmElements_t tminput);
+        void read (tmElements_t & p_tmoutput);
 
-		void clearAlarm ();
+        void set (tmElements_t tminput);
 
-		void nextMinuteWake (bool enabled = true);
+        void clearAlarm ();
 
-		void atMinuteWake (uint8_t minute, bool enabled = true);
+        void nextMinuteWake (bool enabled = true);
 
-		void atTimeWake (uint8_t hour, uint8_t minute, bool enabled = true);
+        void atMinuteWake (uint8_t minute, bool enabled = true);
 
-		uint8_t temperature ();
+        void atTimeWake (uint8_t hour, uint8_t minute, bool enabled = true);
 
-		uint8_t getType ();
+        uint8_t temperature ();
 
-		uint32_t getADCPin ();
+        uint8_t getType ();
 
-		uint16_t getLocalYearOffset ();
+        uint32_t getADCPin ();
 
-		float getWatchyHWVer ();
+        uint16_t getLocalYearOffset ();
 
-		void UseESP32 (bool enforce);
+        float getWatchyHWVer ();
 
-		bool OnESP32 ();
+        void useESP32 (bool enforce, bool need32K = false);
 
-		time_t doMakeTime (tmElements_t tminput);
+        bool onESP32 ();
 
-		void doBreakTime (time_t & p_tinput, tmElements_t & p_tminout);
+        time_t doMakeTime (tmElements_t tminput);
 
-		bool isOperating ();
+        void doBreakTime (time_t & p_tinput, tmElements_t & p_tminout);
 
-		float getRTCBattery (bool critical = false);
+        bool isOperating ();
 
-		void beginDrift (tmElements_t & p_tminput, bool internal);
+        float getRTCBattery (bool critical = false);
 
-		void pauseDrift (bool pause);
+        void beginDrift (tmElements_t & p_tminput, bool internal = false);
 
-		void endDrift (tmElements_t & p_tminput, bool internal);
+        void pauseDrift (bool pause);
 
-		uint32_t getDrift (bool internal);
+        void endDrift (tmElements_t & p_tminput, bool internal = false);
 
-		void setDrift (uint32_t Drift, bool isFast, bool internal);
+        uint32_t getDrift (bool internal = false);
 
-		bool isFastDrift (bool internal);
+        void setDrift (uint32_t Drift, bool isFast, bool internal = false);
 
-		bool isNewMinute ();
+        bool isFastDrift (bool internal = false);
 
-		bool updatedDrift (bool internal);
+        bool isNewMinute ();
 
-		bool checkingDrift (bool internal);
+        bool updatedDrift (bool internal = false);
 
-	private:
-		void set (tmElements_t tm, bool enforce, bool internal);
- 
-		void read (tmElements_t & tm, bool internal);
- 
-		void driftReset (time_t t, bool internal);
- 
-		void manageDrift (tmElements_t & tm, bool internal);
- 
-		void checkStatus (bool reset_op = false);
- 
-		void atMinuteWake (uint8_t hour, uint8_t minute, bool enabled = true);
- 
-		String _getValue (String data, char separator, int index);
+        bool checkingDrift (bool internal = false);
+
+        void use32K(bool active);
+
+    private:
+        void set (tmElements_t tm, bool enforce, bool internal);
+
+        void read (tmElements_t & tm, bool internal);
+
+        void driftReset (time_t t, bool internal);
+
+        void manageDrift (tmElements_t & tm, bool internal);
+
+        void checkStatus (bool reset_op = false);
+
+        void atMinuteWake (uint8_t hour, uint8_t minute, bool enabled = true);
+
+        String _getValue (String data, char separator, int index);
 
 };
 
-#endif	/* 
- */
+#endif
