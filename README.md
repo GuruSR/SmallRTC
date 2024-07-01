@@ -1,7 +1,9 @@
-# SmallRTC 2.3.5  [![Arduino Lint](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml/badge.svg)](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml)
+# SmallRTC 2.3.7  [![Arduino Lint](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml/badge.svg)](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml)
 A WatchyRTC replacement that offers more functionality, correct time.h and timelib.h operation and is NTP safe.
 
-Function names changed in Version 2.3.5, please be aware of them.
+Function names changed in Version 2.3.5+, please be aware of them.
+
+Functions showing [] around parameters, means optional.
 
 Functions and their usage:
 
@@ -33,9 +35,9 @@ Use this function to request the RTC to wake up on the hour and minute, for Midn
 
 **float getWatchyHWVer():**  Returns the detected Watchy hardware version #.
 
-**void UseESP32(bool Enforce):**  Tell SmallRTC to only use the Internal RTC.
+**void useESP32(bool Enforce, [bool need32K]):**  Tell SmallRTC to only use the Internal RTC.
 
-**bool OnESP32():**  Returns `true` if the Internal RTC is being used (by way of enforcement or hardware version).
+**bool onESP32():**  Returns `true` if the Internal RTC is being used (by way of enforcement or hardware version).
 
 **time_t doMakeTime(tmElements_t TM)** A TimeLib.h & time.h compliant version of `makeTime()`.
 
@@ -45,27 +47,33 @@ Use this function to request the RTC to wake up on the hour and minute, for Midn
 
 **float getRTCBattery(bool Critical = false)** retrieves the low/critical battery voltages that will keep the RTC running properly.
 
-**void beginDrift(tmElements_t &TM, bool Internal):**  Start the Drift Detection with the current time (TM) from a reliable source (time.is) and which RTC.
+**void beginDrift(tmElements_t &TM, [bool Internal]):**  Start the Drift Detection with the current time (TM) from a reliable source (time.is) and which RTC.
 
 **void pauseDrift(bool Pause):**  Tells SmallRTC to stop drift alteration (useful when timers are running to avoid odd behavior).
 
-**void endDrift(tmElements_t &TM, bool Internal):**  Complete Drift Detection and create Drift Value.  TM is the current time from the same source as `beginDrift`.
+**void endDrift(tmElements_t &TM, [bool Internal]):**  Complete Drift Detection and create Drift Value.  TM is the current time from the same source as `beginDrift`.
 
-**uint32_t getDrift(bool Internal):**  Returns the Drift Value in 100ths of a second.  This value is never negative.
+**uint32_t getDrift([bool Internal]):**  Returns the Drift Value in 100ths of a second.  This value is never negative.
 
-**void setDrift(uint32_t Drift, bool isFast, bool Internal):**  Set the Drift Value, whether the RTC runs FAST and if setting the Internal RTC Drift Value or not.
+**void setDrift(uint32_t Drift, bool isFast, [bool Internal]):**  Set the Drift Value, whether the RTC runs FAST and if setting the Internal RTC Drift Value or not.
 
-**bool isFastDrift(bool Internal):**  This returns whether the specified RTC's drift is Fast or not.
+**bool isFastDrift([bool Internal]):**  This returns whether the specified RTC's drift is Fast or not.
 
 **bool isNewMinute():**  This will return `true` when a minute has actually passed.
 
-**bool updatedDrift(bool Internal):**  Returns `true` if time drift has happened since last time set on the specified RTC.
+**bool updatedDrift([bool Internal]):**  Returns `true` if time drift has happened since last time set on the specified RTC.
 
-**bool checkingDrift(bool Internal):**  Returns `true` if the specified RTC is currently doing a Drift Detection.
+**bool checkingDrift([bool Internal]):**  Returns `true` if the specified RTC is currently doing a Drift Detection.
+
+**void use32K(bool active):**  Tell SmallRTC for the Internal RTC to use the 32K timing.  Automatically on for Watchy V3.
 
 **NOTE:**  To use the getADCPin():   `getBatteryVoltage() { return analogReadMilliVolts(RTC.getADCPin()) / 500.0f; }`
 
 **NOTE:**  For the PCF8563, there are 2 variants, use the RTC.getADCPin() to determine where the UP Button is.
+
+All `bool Internal` parameters are optional, though if you do not choose true, the useESP32 function's value is used.
+
+**NOTE:**  As of 2.3.7, if any external RTC isn't recognized, the internal RTC will be forced on.
 
 How to use in your Watchy:
 
@@ -95,7 +103,7 @@ tmElements_t in use with `set(tmElements tm)` also expects the above values.
 
 **Compilation:**
 
-For those using PlatformIO, you may run into errors about settimeofday and gettimeof day, you're compiling with Linux includes, not Arduino.  To avoid the problem, you'll need to do the following:
+For those using PlatformIO, you may run into errors about settimeofday and gettimeofday, you're compiling with Linux includes, not Arduino.  To avoid the problem, you'll need to do the following:
 
 In SmallRTC.h, change:
 
@@ -116,3 +124,5 @@ Just be sure these are before your `#include <SmallRTC.h>`:
 `#define SMALL_RTC_NO_INT`
 
 Remember, you need at least 1 present for the RTC code to do anything.
+
+As of version 2.3.7, you do not need to set `esp_sleep_enable_ext0_wakeup` as it is now done when you use any of the RTCs that require it.
