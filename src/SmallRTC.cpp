@@ -1180,7 +1180,7 @@ SmallRTC::useESP32 (bool enforce, bool need32K)
     if (need32K)
     {
 
-        SmallRTC:use32K(need32K);
+        SmallRTC::use32K(need32K);
 
     }
 
