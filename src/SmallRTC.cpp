@@ -976,7 +976,7 @@ SmallRTC::atMinuteWake (uint8_t hour, uint8_t minute, bool enabled)
       
     int8_t X;
       
-    time_t T;
+    uint64_t T;
       
     bool bHour;                    // DS3231M:  Ignores hour.
 
