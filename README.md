@@ -1,4 +1,4 @@
-# SmallRTC 2.3.7  [![Arduino Lint](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml/badge.svg)](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml)
+# SmallRTC 2.3.8  [![Arduino Lint](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml/badge.svg)](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml)
 A WatchyRTC replacement that offers more functionality, correct time.h and timelib.h operation and is NTP safe.
 
 Function names changed in Version 2.3.5+, please be aware of them.
@@ -20,10 +20,10 @@ Functions and their usage:
 **nextMinuteWake(bool Enabled = true):**  This should be in your `deepSleep()` function just in front of `esp_deep_sleep_start()`.  This functions offers a False (optional) that will not wake the watch up on the next minute, for those who wish to only enable buttons to wake.
 
 **atMinuteWake(uint8_t Minute, bool Enabled = true):**
-Use this instead of `nextMinuteWake`, as this will make the RTC wake up when the Minute data element matches the Minute you give it.  Just like `nextMinuteWake` it can use False (optional) here to also stop the wake up from happening.
+Use this instead of `nextMinuteWake`, as this will make the RTC wake up when the Minute data element matches the Minute you give it.  Just like `nextMinuteWake` it can use False (optional) here to also stop the wake up from happening.  atMinuteWake can accept up to 60 minutes of extra time on the Minute value, this allows for minute wraparound if you don't want to calculate it yourself.
 
 **atTimeWake(uint8_t Hour, uint8_t Minute, bool Enabled = true):**
-Use this function to request the RTC to wake up on the hour and minute, for Midnight the hour has to be set to **24**.
+Use this function to request the RTC to wake up on the hour and minute.  The Minute can accept up to 120 minutes, these are rolled into hours and added to the Hour entry.  Any hour rollover is automatically accounted for.
 
 **uint8_t temperature():** Imported from WatchyRTC for compatibility.
 
