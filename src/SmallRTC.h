@@ -25,6 +25,7 @@
  * Version 2.3.5 March     5, 2024 : Fixed copy/paste error and beautified source files, unified rtc type defines.
  * Version 2.3.6 April     1, 2024 : Fixed atTimeWake and atMinuteWake to use new RTC_OMIT_HOUR define.
  * Version 2.3.7 July      1, 2024 : Added RTC32K support, force default of internal RTC when no version found.
+ * Version 2.3.8 July     12, 2024 : Cleaned up atTimeWake and atMinuteWake for better minute rollover.
  *
  * This library offers an alternative to the WatchyRTC library, but also provides a 100% time.h and timelib.h
  * compliant RTC library.
@@ -210,7 +211,7 @@ class SmallRTC
 
         bool checkingDrift (bool internal = false);
 
-        void use32K(bool active);
+        void use32K (bool active);
 
     private:
         void set (tmElements_t tm, bool enforce, bool internal);
@@ -224,6 +225,8 @@ class SmallRTC
         void checkStatus (bool reset_op = false);
 
         void atMinuteWake (uint8_t hour, uint8_t minute, bool enabled = true);
+
+        bool _validateWakeup (int8_t & mins, int8_t & hours, tmElements_t & t_data, bool b_internal);
 
         String _getValue (String data, char separator, int index);
 

@@ -24,6 +24,7 @@
  * Version 2.3.5 March     5, 2024 : Fixed copy/paste error and beautified source files, unified rtc type defines.
  * Version 2.3.6 April     1, 2024 : Fixed atTimeWake and atMinuteWake to use new RTC_OMIT_HOUR define.
  * Version 2.3.7 July      1, 2024 : Added RTC32K support, force default of internal RTC when no version found.
+ * Version 2.3.8 July     12, 2024 : Cleaned up atTimeWake and atMinuteWake for better minute rollover.
  *
  * This library offers an alternative to the WatchyRTC library, but also provides a 100% time.h and timelib.h
  * compliant RTC library.
@@ -245,7 +246,7 @@ SmallRTC::init ()
 
     }
   
-    if (f_watchyhwver == 0)
+    if (!f_watchyhwver)
     {                            /* Try to find it by way of battery */
       
 #ifndef SMALL_RTC_NO_DS3232
@@ -971,46 +972,41 @@ SmallRTC::atMinuteWake (uint8_t minute, bool enabled)
 void
 SmallRTC::atMinuteWake (uint8_t hour, uint8_t minute, bool enabled)
 {
-  
+
+    bool b;
+
     tmElements_t t;
-      
-    int8_t X;
-      
-    uint64_t T;
-      
-    bool bHour;                    // DS3231M:  Ignores hour.
+
+    int8_t wantedHour, wantedMinute;
+
+    uint64_t waitTime, workHour, workMin;
+
+    wantedHour = hour;
+
+    wantedMinute = minute;
 
 #ifndef SMALL_RTC_NO_INT
     if (m_rtctype == RTC_ESP32 || b_forceesp32)
     {
 
-        SmallRTC::read (t, true);
-
-        X = (minute % 60) - t.Minute;
-
-        if (X < 0)
-
-        X += 60;
-
-        T = ((X * 60) - t.Second) * 1000000;
+        b = SmallRTC::_validateWakeup (wantedMinute, wantedHour, t, true);
 
         if (hour != RTC_OMIT_HOUR)
         {
 
-            X = (hour % 24) - t.Hour;
+            workHour = wantedHour;
 
-            if (X < 0)
-            {
-
-                X += 24;
-
-            }
-
-            T += (X * 3600000000);
+            workHour *= 3600;
 
         }
 
-        esp_sleep_enable_timer_wakeup (T);
+        workMin = wantedMinute;
+
+        workMin *= 60;
+
+        waitTime = ((workHour + workMin - t.Second) * 1000000);
+
+        esp_sleep_enable_timer_wakeup (waitTime);
 
         if (b_use32K)
         {
@@ -1027,24 +1023,16 @@ SmallRTC::atMinuteWake (uint8_t hour, uint8_t minute, bool enabled)
     if (m_rtctype == RTC_DS3231)
     {
 
-        SmallRTC::read (t, false);
-      
+        b = SmallRTC::_validateWakeup (wantedMinute, wantedHour, t, false);
+
         if (hour == RTC_OMIT_HOUR)
         {
 
-            bHour = true;
-
-            hour = t.Hour;
+            wantedHour = t.Hour;
 
         }
-        if (minute < t.Minute || minute > 59)
-        {
 
-            hour++;
-
-        }
-      
-        if (hour > 23 || hour < t.Hour)
+        if (b)
         {
 
             t.Wday++;
@@ -1054,8 +1042,8 @@ SmallRTC::atMinuteWake (uint8_t hour, uint8_t minute, bool enabled)
         rtc_ds.clearAlarm (DS3232RTC::ALARM_2);    //resets the alarm flag in the RTC
 
         rtc_ds.
-        setAlarm ((bHour ? DS3232RTC::ALM2_MATCH_HOURS : DS3232RTC::
-                   ALM2_MATCH_MINUTES), (minute % 60), (hour % 24),
+        setAlarm ((hour != RTC_OMIT_HOUR ? DS3232RTC::ALM2_MATCH_HOURS :
+                   DS3232RTC::ALM2_MATCH_MINUTES), wantedMinute, wantedHour,
                   (t.Wday % 7) + 1);
       
         rtc_ds.alarmInterrupt (DS3232RTC::ALARM_2, enabled);    // Turn interrupt on or off based on Enabled.
@@ -1070,23 +1058,19 @@ SmallRTC::atMinuteWake (uint8_t hour, uint8_t minute, bool enabled)
 
         rtc_pcf.clearAlarm ();
 
-        if (hour != RTC_OMIT_HOUR)
+        b = SmallRTC::_validateWakeup (wantedMinute, wantedHour, t, false);
+
+        if (hour == RTC_OMIT_HOUR)
         {
 
-            hour %= 24;
-
-        }
-        else
-        {
-
-            hour = 99;
+            wantedHour = 99;
 
         }
 
         if (enabled)
         {
 
-            rtc_pcf.setAlarm ((minute % 60), hour, 99, 99);
+            rtc_pcf.setAlarm ((wantedMinute % 60), wantedHour, 99, 99);
 
         }
         else
@@ -1285,7 +1269,7 @@ SmallRTC::getRTCBattery (bool critical)
 
  
 void
-SmallRTC::use32K(bool active)
+SmallRTC::use32K (bool active)
 {
 
     if (m_rtctype == RTC_ESP32 || b_forceesp32)
@@ -1298,9 +1282,90 @@ SmallRTC::use32K(bool active)
 }
 
 
+bool
+SmallRTC::_validateWakeup (int8_t & mins, int8_t & hours, tmElements_t & t_data, bool b_internal)
+{
+
+    int8_t tmp = 0;
+
+    bool b_NoHour = false;
+
+    bool b_nextDay = false;
+
+    SmallRTC::read (t_data, b_internal);
+
+    if (hours == -1)
+    {
+
+        hours = 0;
+        b_NoHour = true;
+
+    }
+
+    hours &= 0x7F;
+
+    tmp = (mins / 60);
+
+    mins %= 60;
+
+    if (tmp)
+    {
+
+        hours += tmp;
+
+    }
+    else if (mins < t_data.Minute && b_NoHour && !b_internal)
+    {
+
+        hours++;
+
+    }
+
+    b_nextDay |= (hours > 23 || hours > t_data.Hour);
+
+    hours %= 24;
+
+    if (b_internal)
+    {
+
+        if (!b_NoHour)
+        {
+
+            mins -= t_data.Minute;
+
+        }
+
+        if (mins < 0)
+        {
+
+            mins+=60;
+            hours--;
+
+        }
+
+        if (!b_NoHour)
+        {
+
+            hours -= t_data.Hour;
+
+            if (hours < 0)
+            {
+
+                hours+=24;
+
+            }
+
+        }
+
+    }
+
+    return b_nextDay;
+
+}
+
 String
 SmallRTC::_getValue (String data, char separator, int index) 
- { 
+{ 
 
     int found = 0;
 
