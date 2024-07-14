@@ -29,7 +29,7 @@ Use this function to request the RTC to wake up on the hour and minute.  The Min
 
 **uint8_t getType():**  Returns the rtcType as it is no longer exposed.
 
-**uint32_t getADCPin():**  Returns the ADC_PIN, so your BatteryVoltage function can look like:
+**uint32_t getADCPin():**  Returns the ADC_PIN, to see an example, see NOTE below. [^1]
 
 **uint16_t getLocalYearOffset():**  Returns the Year Offset, hard coded to 1900.
 
@@ -69,7 +69,7 @@ Use this function to request the RTC to wake up on the hour and minute.  The Min
 
 **NOTE:**  To use the getADCPin():   `getBatteryVoltage() { return analogReadMilliVolts(RTC.getADCPin()) / 500.0f; }`
 
-**NOTE:**  For the PCF8563, there are 2 variants, use the RTC.getADCPin() to determine where the UP Button is.
+[^1]:**NOTE:**  For the PCF8563, there are 2 variants, use the RTC.getADCPin() to determine where the UP Button is.
 
 All `bool Internal` parameters are optional, though if you do not choose true, the useESP32 function's value is used.
 
