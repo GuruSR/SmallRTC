@@ -67,9 +67,9 @@ Use this function to request the RTC to wake up on the hour and minute.  The Min
 
 **void use32K(bool active):**  Tell SmallRTC for the Internal RTC to use the 32K timing.  Automatically on for Watchy V3.
 
-[^2]:**NOTE:**  To use the getADCPin():   `getBatteryVoltage() { return analogReadMilliVolts(RTC.getADCPin()) / 500.0f; }`
+[^2]:  Usage of the getADCPin() function:   `getBatteryVoltage() { return analogReadMilliVolts(RTC.getADCPin()) / 500.0f; }`  500.0f is a sample divider, please use the correct one for the supported version.
 
-[^1]:**NOTE:**  For the PCF8563, there are 2 variants, use the RTC.getADCPin() to determine where the UP Button is.
+[^1]:  For the PCF8563, there are 2 variants, use the RTC.getADCPin() to determine where the UP Button is.
 
 All `bool Internal` parameters are optional, though if you do not choose true, the useESP32 function's value is used.
 
