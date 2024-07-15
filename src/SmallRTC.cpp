@@ -25,6 +25,7 @@
  * Version 2.3.6 April     1, 2024 : Fixed atTimeWake and atMinuteWake to use new RTC_OMIT_HOUR define.
  * Version 2.3.7 July      1, 2024 : Added RTC32K support, force default of internal RTC when no version found.
  * Version 2.3.8 July     12, 2024 : Cleaned up atTimeWake and atMinuteWake for better minute rollover.
+ * Version 2.3.9 July     15, 2024 : Repair _validateWake with respect to internal RTC usage.
  *
  * This library offers an alternative to the WatchyRTC library, but also provides a 100% time.h and timelib.h
  * compliant RTC library.
@@ -981,6 +982,8 @@ SmallRTC::atMinuteWake (uint8_t hour, uint8_t minute, bool enabled)
 
     uint64_t waitTime, workHour, workMin;
 
+    workHour = 0;
+
     wantedHour = hour;
 
     wantedMinute = minute;
@@ -994,13 +997,13 @@ SmallRTC::atMinuteWake (uint8_t hour, uint8_t minute, bool enabled)
         if (hour != RTC_OMIT_HOUR)
         {
 
-            workHour = wantedHour;
+            workHour = (uint64_t)wantedHour;
 
             workHour *= 3600;
 
         }
 
-        workMin = wantedMinute;
+        workMin = (uint64_t)wantedMinute;
 
         workMin *= 60;
 
@@ -1328,12 +1331,7 @@ SmallRTC::_validateWakeup (int8_t & mins, int8_t & hours, tmElements_t & t_data,
     if (b_internal)
     {
 
-        if (!b_NoHour)
-        {
-
-            mins -= t_data.Minute;
-
-        }
+        mins -= t_data.Minute;
 
         if (mins < 0)
         {
