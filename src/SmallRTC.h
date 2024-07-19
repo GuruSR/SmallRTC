@@ -3,7 +3,7 @@
 
 /* SmallRTC by GuruSR (https://www.github.com/GuruSR/SmallRTC)
  * Originally forked from WatchyRTC with a variety of fixes and improvements.
- * 
+ *
  * Version 1.0, January    2, 2022
  * Version 1.1, January    4, 2022 : Correct Months from 1 to 12 to 0 to 11.
  * Version 1.2, January    7, 2022 : Added atminuteWake to enable minute based wakeup.
@@ -27,6 +27,7 @@
  * Version 2.3.7 July      1, 2024 : Added RTC32K support, force default of internal RTC when no version found.
  * Version 2.3.8 July     12, 2024 : Cleaned up atTimeWake and atMinuteWake for better minute rollover.
  * Version 2.3.9 July     15, 2024 : Repair _validateWake with respect to internal RTC usage.
+ * Version 2.4.0 July     18, 2029 : Clean up of timeval to remove bleed from previous use.
  *
  * This library offers an alternative to the WatchyRTC library, but also provides a 100% time.h and timelib.h
  * compliant RTC library.
@@ -54,12 +55,12 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
-*/ 
+*/
 
 // Choose your options by editing this file or adding the #defines below prior to this library.
 //  #define SMALL_RTC_NO_DS3232
 //  #define SMALL_RTC_NO_PCF8563
-//  #define SMALL_RTC_NO_INT  
+//  #define SMALL_RTC_NO_INT
 
 #include <TimeLib.h>
 
@@ -116,7 +117,7 @@
 #define    RTC_ESP32 3
 
 struct gsrdrifting final
-{ 
+{
 
     float drift;            // Drift value in seconds (with 2 decimal places).
     bool fast;                // The drift is fast.
