@@ -50,6 +50,8 @@
  *                                   previous use.
  * Version 2.4.1 July     22, 2024 : Moved RTC32K to init to run once.
  *                                   Removed year manipulation.
+ * Version 2.4.2 July     25, 2024 : Corrected manageDrift to properly deal
+ *                                   with leftovers and negative durations.
  *
  * This library offers an alternative to the WatchyRTC library, but also
  * provides a 100% time.h and timelib.h compliant RTC library.
@@ -681,6 +683,8 @@ SmallRTC::manageDrift (tmElements_t & p_tminput, bool internal)
 
     uint32_t v, s;
 
+    int32_t r;
+
     time_t t = SmallRTC::doMakeTime (p_tminput);
 
     gsrdrifting * g = (internal) ? &__srtcdrift.esprtc : &__srtcdrift.extrtc;
@@ -697,9 +701,14 @@ SmallRTC::manageDrift (tmElements_t & p_tminput, bool internal)
     if (g->drift)
     {
 
-        l = t - (g->slush + g->last);
+        l = t - g->last;
 
-        s = floor (l / g->drift);
+        if (l > 0.0)
+        {
+
+            s = floor(l / g->drift); 
+
+        }
 
     }     // Take the seconds and divide by Drift, rounding down.
 
@@ -713,23 +722,21 @@ SmallRTC::manageDrift (tmElements_t & p_tminput, bool internal)
 
         }
 
-        d = g->slush + (s * g->drift);
+        d = g->slush + (s * g->drift);           // Handle the seconds based on what happened.
 
-        v = floor (d);
+        v = floor(d);
 
-        t += ((g->fast ? -1 : 1) * s);
+        r = ((g->fast ? -1 : 1) * s);
+
+        t += r;
 
         SmallRTC::doBreakTime (t, p_tminput);
 
         SmallRTC::set (p_tminput, true, internal);
 
-        // Set the current time with the addition of any leftover seconds.
+        g->last = t + (l - v);                   // Set the current time with the addition of any leftover seconds.
 
-        g->last = t - (l - v);
-
-        // Leftovers into the slush to account for drift in decimal.
-
-        g->slush = (d - v);
+        g->slush = (d - v);                      // Put the leftovers back into the slush to account for drift in decimal.
 
         g->drifted = true;
 

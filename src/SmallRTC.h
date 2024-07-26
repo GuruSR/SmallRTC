@@ -51,6 +51,8 @@
  *                                   previous use.
  * Version 2.4.1 July     22, 2024 : Moved RTC32K to init to run once.
  *                                   Removed year manipulation.
+ * Version 2.4.2 July     25, 2024 : Corrected manageDrift to properly deal
+ *                                   with leftovers and negative durations.
  *
  * This library offers an alternative to the WatchyRTC library, but also
  * provides a 100% time.h and timelib.h compliant RTC library.
