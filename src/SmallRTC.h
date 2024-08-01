@@ -53,6 +53,8 @@
  *                                   Removed year manipulation.
  * Version 2.4.2 July     25, 2024 : Corrected manageDrift to properly deal
  *                                   with leftovers and negative durations.
+ * Version 2.4.3 July     30, 2024 : Fixed bizarre conversion from float to
+ *                                   uint32_t causing a value to be off.
  *
  * This library offers an alternative to the WatchyRTC library, but also
  * provides a 100% time.h and timelib.h compliant RTC library.

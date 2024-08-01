@@ -52,6 +52,8 @@
  *                                   Removed year manipulation.
  * Version 2.4.2 July     25, 2024 : Corrected manageDrift to properly deal
  *                                   with leftovers and negative durations.
+ * Version 2.4.3 July     30, 2024 : Fixed bizarre conversion from float to
+ *                                   uint32_t causing a value to be off.
  *
  * This library offers an alternative to the WatchyRTC library, but also
  * provides a 100% time.h and timelib.h compliant RTC library.
@@ -103,7 +105,7 @@ SmallRTC::SmallRTC ()
 {
 }
 
-struct timeval tv;
+struct timespec tv;
 
 
 void
@@ -360,11 +362,11 @@ SmallRTC::setDateTime (String datetime)
 
     SmallRTC::doBreakTime (t, tm);
 
-    tv.tv_usec = 0;
+    tv.tv_nsec = 0;
 
     tv.tv_sec = t;
 
-    settimeofday (&tv, 0);
+    clock_settime (CLOCK_REALTIME, &tv);
 
     SmallRTC::driftReset (t, true);
 
@@ -457,7 +459,7 @@ SmallRTC::read (tmElements_t & p_tmoutput, bool internal)
 #ifndef SMALL_RTC_NO_INT
     tmElements_t ti;
 
-    gettimeofday (&tv, 0);
+    clock_gettime (CLOCK_REALTIME, &tv);
 
     SmallRTC::doBreakTime (tv.tv_sec, ti);
 
@@ -490,11 +492,11 @@ SmallRTC::read (tmElements_t & p_tmoutput, bool internal)
 
         p_tmoutput.Month--;
 
-        tv.tv_usec = 0;
+        tv.tv_nsec = 0;
 
         tv.tv_sec = SmallRTC::doMakeTime (ti);
 
-        settimeofday (&tv, 0);
+        clock_settime (CLOCK_REALTIME, &tv);
 
         __srtcdrift.extrtc.drifted = false;
 
@@ -526,11 +528,11 @@ SmallRTC::read (tmElements_t & p_tmoutput, bool internal)
 
         __srtcdrift.newmin = millis () + (60 - p_tmoutput.Second) * 1000;
 
-        tv.tv_usec = 0;
+        tv.tv_nsec = 0;
 
         tv.tv_sec = SmallRTC::doMakeTime (ti);
 
-        settimeofday (&tv, 0);
+        clock_settime (CLOCK_REALTIME, &tv);
 
         __srtcdrift.extrtc.drifted = false;
 
@@ -570,11 +572,11 @@ SmallRTC::set (tmElements_t tm, bool enforce, bool internal)
     if (!enforce || (enforce && internal))
     {
 
-        tv.tv_usec = 0;
+        tv.tv_nsec = 0;
 
         tv.tv_sec = t;
 
-        settimeofday (&tv, 0);
+        clock_settime (CLOCK_REALTIME, &tv);
 
         SmallRTC::driftReset (t, true);
 
@@ -823,7 +825,7 @@ SmallRTC::endDrift (tmElements_t & p_tminput, bool internal)
 
         d = (t - o);
 
-        f = o - g->begin;
+        f = round (o - g->begin);
 
         if (d != 0)
         {
@@ -859,6 +861,8 @@ uint32_t
 SmallRTC::getDrift (bool internal)
 {
 
+    float t;
+
     if (!internal)
     {
 
@@ -866,16 +870,11 @@ SmallRTC::getDrift (bool internal)
 
     }
 
-    float
-        T = (internal) ? __srtcdrift.esprtc.drift : __srtcdrift.extrtc.drift;
+    t = (internal) ? __srtcdrift.esprtc.drift : __srtcdrift.extrtc.drift;
 
-    uint32_t O;
+    t *= 100.0;
 
-    T *= 100.0;
-
-    O = T;
-
-    return O;
+    return (uint32_t)round (t);
 
 }
 
