@@ -1,4 +1,4 @@
-# SmallRTC 2.4.3  [![Arduino Lint](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml/badge.svg)](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml)
+# SmallRTC 2.4.7  [![Arduino Lint](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml/badge.svg)](https://github.com/GuruSR/SmallRTC/actions/workflows/main.yml)
 A WatchyRTC replacement that offers more functionality, correct time.h and timelib.h operation and is NTP safe.
 
 Function names changed in Version 2.3.5+, please be aware of them.
@@ -8,6 +8,8 @@ Functions showing [] around parameters, means optional.
 Functions and their usage:
 
 **init():**  Use this in the **switch (wakeup_reason)** in **default:**  Make it the first entry, so you can use the last function for Battery Voltage.  Now includes corrections for the DS3231 and includes detection of non-functioning RTC.
+
+**sysBoot():**  (Version 2.4.7+)  Add this to your boot sequence to correct isNewMinute during Active Mode.
 
 **setDateTime(String datetime):**  Originally from WatchyRTC.config(datetime), this is cleaned up and corrected, includes detection of non-functioning RTC.
 
@@ -20,16 +22,16 @@ Functions and their usage:
 **nextMinuteWake(bool Enabled = true):**  This should be in your `deepSleep()` function just in front of `esp_deep_sleep_start()`.  This functions offers a False (optional) that will not wake the watch up on the next minute, for those who wish to only enable buttons to wake.
 
 **atMinuteWake(uint8_t Minute, bool Enabled = true):**
-Use this instead of `nextMinuteWake`, as this will make the RTC wake up when the Minute data element matches the Minute you give it.  Just like `nextMinuteWake` it can use False (optional) here to also stop the wake up from happening.  atMinuteWake can accept up to 60 minutes of extra time on the Minute value, this allows for minute wraparound if you don't want to calculate it yourself.
+Use this instead of `nextMinuteWake`, as this will make the RTC wake up when the Minute data element matches the Minute you give it.  Just like `nextMinuteWake` it can use False (optional) here to also stop the wake up from happening.
 
 **atTimeWake(uint8_t Hour, uint8_t Minute, bool Enabled = true):**
-Use this function to request the RTC to wake up on the hour and minute.  The Minute can accept up to 120 minutes, these are rolled into hours and added to the Hour entry.  Any hour rollover is automatically accounted for.
+Use this function to request the RTC to wake up on the hour and minute, for Midnight the hour has to be set to **24**.
 
 **uint8_t temperature():** Imported from WatchyRTC for compatibility.
 
 **uint8_t getType():**  Returns the rtcType as it is no longer exposed.
 
-**uint32_t getADCPin():**  Returns the ADC_PIN, to see an example, see NOTE below. [^1] [^2]
+**uint32_t getADCPin():**  Returns the ADC_PIN, so your BatteryVoltage function can look like:
 
 **uint16_t getLocalYearOffset():**  Returns the Year Offset, hard coded to 1900.
 
@@ -67,9 +69,9 @@ Use this function to request the RTC to wake up on the hour and minute.  The Min
 
 **void use32K(bool active):**  Tell SmallRTC for the Internal RTC to use the 32K timing.  Automatically on for Watchy V3.
 
-[^2]:  Usage of the getADCPin() function:   `getBatteryVoltage() { return analogReadMilliVolts(RTC.getADCPin()) / 500.0f; }`  500.0f is a sample divider, please use the correct one for the supported version.
+**NOTE:**  To use the getADCPin():   `getBatteryVoltage() { return analogReadMilliVolts(RTC.getADCPin()) / 500.0f; }`
 
-[^1]:  For the PCF8563, there are 2 variants, use the RTC.getADCPin() to determine where the UP Button is.
+**NOTE:**  For the PCF8563, there are 2 variants, use the RTC.getADCPin() to determine where the UP Button is.
 
 All `bool Internal` parameters are optional, though if you do not choose true, the useESP32 function's value is used.
 
