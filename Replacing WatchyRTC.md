@@ -17,7 +17,7 @@ void Watchy::init(String datetime) {
   display.init(0, displayFullInit, 10,
                true); // 10ms by spec, and fast pulldown reset
   display.epd2.setBusyCallback(displayBusyCallback);
-
+->  RTC.sysBoot();  <-  Add this here for correct isNewMinute during Active Mode.
   switch (wakeup_reason) {
   case ESP_SLEEP_WAKEUP_EXT0: // RTC Alarm
     RTC.read(currentTime);
